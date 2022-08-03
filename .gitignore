@@ -1,0 +1,4 @@
+sendgrid.env
+/target
+.*
+!/.gitignore
