@@ -14,12 +14,7 @@ Copyright 2022 Google LLC
    limitations under the License.
 */
 
-# Update values
-project_id                 = ""
-region                     = ""
-service_account_email      = ""
-folders                    = "[]"
-organizations              = "[]"
-alert_log_bucket_name      = ""
-notification_email_address = ""
-threshold                  = ""
+output "email0_id" {
+  value = google_monitoring_notification_channel.email0.name
+  description = "Full resource identifier for the notification channel."
+}
