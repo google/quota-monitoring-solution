@@ -27,20 +27,20 @@ The architecture is built using Google Cloud managed services - Cloud Functions,
 - The Data Studio report can be scheduled to be emailed to appropriate team for weekly/daily reporting.
 ## 3. Deployment Guide
 ### Content
-- [3.1 Prerequisites](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#31-prerequisites)
-- [3.2 Initial Setup](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#32-initial-setup)
-- [3.3 Create Service Account](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#33-create-service-account)
-- [3.4 Grant Roles to Service Account](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#34-grant-roles-to-service-account)
-  - [3.4.1 Grant Roles in the Host Project](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#341-grant-roles-in-the-host-project)
-  - [3.4.2 Grant Roles in the Target Folder](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#342-grant-roles-in-the-target-folder)
-  - [3.4.3 Grant Roles in the Target Organization](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#343-grant-roles-in-the-target-organization)
-- [3.6 Download Service Account Key File](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#35-download-service-account-key-file)
-- [3.5 Download Terraform File](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#36-download-terraform-file)
-- [3.7 Configure Terraform](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#37-configure-terraform)
-- [3.8 Run Terraform](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#38-run-terraform)
-- [3.9 Testing](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#39-testing)
-- [3.10 Data Studio Dashboard setup](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#310-data-studio-dashboard-setup)
-- [3.11 Scheduled Reporting](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#311-scheduled-reporting)
+- [3.1 Prerequisites](#31-prerequisites)
+- [3.2 Initial Setup](#32-initial-setup)
+- [3.3 Create Service Account](#33-create-service-account)
+- [3.4 Grant Roles to Service Account](#34-grant-roles-to-service-account)
+  - [3.4.1 Grant Roles in the Host Project](#341-grant-roles-in-the-host-project)
+  - [3.4.2 Grant Roles in the Target Folder](#342-grant-roles-in-the-target-folder)
+  - [3.4.3 Grant Roles in the Target Organization](#343-grant-roles-in-the-target-organization)
+- [3.6 Download Service Account Key File](#35-download-service-account-key-file)
+- [3.5 Download Terraform File](#36-download-terraform-file)
+- [3.7 Configure Terraform](#37-configure-terraform)
+- [3.8 Run Terraform](#38-run-terraform)
+- [3.9 Testing](#39-testing)
+- [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup)
+- [3.11 Scheduled Reporting](#311-scheduled-reporting)
 ### 3.1 Prerequisites
 1. Host Project - A project where the BigQuery instance, Cloud Function and Cloud Scheduler will be deployed. For example Project A. 
 2. Target Node - The Organization or folder or project which will be scanned for Quota Metrics. For example Org A and Folder A.
@@ -446,10 +446,3 @@ You should now receive alerts in your Slack channel whenever a quota reaches the
 
 ## 5. Contact Us
 For any comments, issues or feedback, please reach out to us at quota-monitoring-solution@google.com
-
-
-
-
-	
-
-
