@@ -1,88 +1,151 @@
-# Quota Monitoring and Alerting 
-> An easy-to-deploy Data Studio Dashboard with alerting capabilities, showing usage and quota limits in an organization or folder.
+# Quota Monitoring and Alerting
 
-Google Cloud enforces [quotas](https://cloud.google.com/docs/quota) on resource usage for project owners, setting a limit on how much of a particular Google Cloud resource your project can use. Each quota limit represents a specific countable resource, such as the number of API requests made per day to the number of load balancers used concurrently by your application.
+> An easy-to-deploy Data Studio Dashboard with alerting capabilities, showing
+usage and quota limits in an organization or folder.
+
+Google Cloud enforces [quotas](https://cloud.google.com/docs/quota) on resource
+usage for project owners, setting a limit on how much of a particular Google
+Cloud resource your project can use. Each quota limit represents a specific
+countable resource, such as the number of API requests made per day to the
+number of load balancers used concurrently by your application.
+
 Quotas are enforced for a variety of reasons:
-- To protect the community of Google Cloud users by preventing unforeseen spikes in usage.
-- To help you manage resources. For example, you can set your own limits on service usage while developing and testing your applications.
 
-We are introducing a new custom quota monitoring and alerting solution for Google Cloud customers.
+*   To protect the community of Google Cloud users by preventing unforeseen
+spikes in usage.
+*   To help you manage resources. For example, you can set your own limits on
+service usage while developing and testing your applications.
+
+We are introducing a new custom quota monitoring and alerting solution for
+Google Cloud customers.
+
 ## 1. Summary
-Quota Monitoring Solution is a stand-alone application of an easy-to-deploy Data Studio dashboard with alerting capabilities showing all usage and quota limits in an organization or folder.
+
+Quota Monitoring Solution is a stand-alone application of an easy-to-deploy
+Data Studio dashboard with alerting capabilities showing all usage and quota
+limits in an organization or folder.
+
 ### 1.1 Four Initial Features
-<img src="img/quota_monitoring_key_features.png" align="center" />
 
-*The data refresh rate depends on the configured frequency to run the application.
+![key-features](img/quota_monitoring_key_features.png)
+
+*The data refresh rate depends on the configured frequency to run the
+application.
+
 ## 2. Architecture
-<img src="img/quota-monitoring-alerting-architecture.png" align="center" />
 
-The architecture is built using Google Cloud managed services - Cloud Functions, Pub/Sub, Dataflow and BigQuery. 
-- The solution is architected to scale using Pub/Sub.
-- Cloud Scheduler is used to trigger Cloud Functions. This is also an user interface to configure frequency, parent nodes, alert threshold and email Ids. Parent node could be an organization Id, folder id, list of organization Ids or list of folder Ids.
-- Cloud Functions are used to scan quotas across projects for the configured parent node.
-- BigQuery is used to store data. 
-- Alert threshold will be applicable across all metrics. 
-- Alerts can be received by Email, Mobile App, PagerDuty, SMS, Slack, Web Hooks and Pub/Sub. Cloud Monitoring custom log metric has been leveraged to create Alerts.
-- Easy to get started and deploy with Data Studio Dashboard. In addition to Data Studio, other visualization tools can be configured. 
-- The Data Studio report can be scheduled to be emailed to appropriate team for weekly/daily reporting.
+![architecture](img/quota-monitoring-alerting-architecture.png)
+
+The architecture is built using Google Cloud managed services - Cloud
+Functions, Pub/Sub, Dataflow and BigQuery.
+
+*   The solution is architected to scale using Pub/Sub.
+*   Cloud Scheduler is used to trigger Cloud Functions. This is also an user
+interface to configure frequency, parent nodes, alert threshold and email Ids.
+Parent node could be an organization Id, folder id, list of organization Ids or
+list of folder Ids.
+*   Cloud Functions are used to scan quotas across projects for the configured
+parent node.
+*   BigQuery is used to store data.
+*   Alert threshold will be applicable across all metrics.
+*   Alerts can be received by Email, Mobile App, PagerDuty, SMS, Slack,
+Webhooks and Pub/Sub. Cloud Monitoring custom log metric has been leveraged to
+create Alerts.
+*   Easy to get started and deploy with Data Studio Dashboard. In addition to
+Data Studio, other visualization tools can be configured.
+*   The Data Studio report can be scheduled to be emailed to appropriate team
+for weekly/daily reporting.
+
 ## 3. Deployment Guide
-### Content
-- [3.1 Prerequisites](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#31-prerequisites)
-- [3.2 Initial Setup](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#32-initial-setup)
-- [3.3 Create Service Account](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#33-create-service-account)
-- [3.4 Grant Roles to Service Account](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#34-grant-roles-to-service-account)
-  - [3.4.1 Grant Roles in the Host Project](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#341-grant-roles-in-the-host-project)
-  - [3.4.2 Grant Roles in the Target Folder](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#342-grant-roles-in-the-target-folder)
-  - [3.4.3 Grant Roles in the Target Organization](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#343-grant-roles-in-the-target-organization)
-- [3.6 Download Service Account Key File](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#35-download-service-account-key-file)
-- [3.5 Download Terraform File](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#36-download-terraform-file)
-- [3.7 Configure Terraform](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#37-configure-terraform)
-- [3.8 Run Terraform](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#38-run-terraform)
-- [3.9 Testing](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#39-testing)
-- [3.10 Data Studio Dashboard setup](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#310-data-studio-dashboard-setup)
-- [3.11 Scheduled Reporting](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#311-scheduled-reporting)
-### 3.1 Prerequisites
-1. Host Project - A project where the BigQuery instance, Cloud Function and Cloud Scheduler will be deployed. For example Project A. 
-2. Target Node - The Organization or folder or project which will be scanned for Quota Metrics. For example Org A and Folder A.
-3. Project Owner role on host Project A. IAM Admin role in target Org A and target Folder A.
-4. Google Cloud SDK is installed. Detailed instructions to install the SDK [here](https://cloud.google.com/sdk/docs/install#mac). See the Getting Started page for an introduction to using gcloud and terraform. 
-5. Terraform version >= 0.14.6 installed. Instructions to install terraform here
-    - Verify terraform version after installing 
 
-```
+### Content
+
+*   [3.1 Prerequisites](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#31-prerequisites)
+*   [3.2 Initial Setup](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#32-initial-setup)
+*   [3.3 Create Service Account](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#33-create-service-account)
+*   [3.4 Grant Roles to Service Account](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#34-grant-roles-to-service-account)
+    *   [3.4.1 Grant Roles in the Host Project](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#341-grant-roles-in-the-host-project)
+    *   [3.4.2 Grant Roles in the Target Folder](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#342-grant-roles-in-the-target-folder)
+    *   [3.4.3 Grant Roles in the Target Organization](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#343-grant-roles-in-the-target-organization)
+*   [3.6 Download Service Account Key File](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#35-download-service-account-key-file)
+*   [3.5 Download Terraform File](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#36-download-terraform-file)
+*   [3.7 Configure Terraform](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#37-configure-terraform)
+*   [3.8 Run Terraform](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#38-run-terraform)
+*   [3.9 Testing](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#39-testing)
+*   [3.10 Data Studio Dashboard setup](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#310-data-studio-dashboard-setup)
+*   [3.11 Scheduled Reporting](https://github.com/anuradha-bajpai-google/professional-services/new/main/tools/quota-monitoring-alerting#311-scheduled-reporting)
+
+### 3.1 Prerequisites
+
+1. Host Project - A project where the BigQuery instance, Cloud Function and
+Cloud Scheduler will be deployed. For example Project A.
+2. Target Node - The Organization or folder or project which will be scanned
+for Quota Metrics. For example Org A and Folder A.
+3. Project Owner role on host Project A. IAM Admin role in target Org A and
+target Folder A.
+4. Google Cloud SDK is installed. Detailed instructions to install the SDK
+[here](https://cloud.google.com/sdk/docs/install#mac). See the Getting Started
+page for an introduction to using gcloud and terraform.
+5. Terraform version >= 0.14.6 installed. Instructions to install terraform here
+    *   Verify terraform version after installing.
+
+```sh
 terraform -version
 ```
+
 The output should look like:
-```
+
+```sh
 Terraform v0.14.6
 + provider registry.terraform.io/hashicorp/google v3.57.0
 ```
+
 *Note - Minimum required version v0.14.6. Lower terraform versions may not work.*
+
 ### 3.2 Initial Setup
-1. In local workstation create a new directory to run terraform and store credential file
-```
+
+1. In local workstation create a new directory to run terraform and store
+credential file
+
+```sh
 mkdir <directory name like quota-monitoring-dashboard>
 cd <directory name>
 ```
+
 2. Set default project in config to host project A
-```
+
+```sh
 gcloud config set project <HOST_PROJECT_ID>
 ```
+
 The output should look like:
-```
+
+```sh
 Updated property [core/project].
 ```
-3. Ensure that the latest version of all installed components is installed on the local workstation.
-```
+
+3. Ensure that the latest version of all installed components is installed on
+the local workstation.
+
+```sh
 gcloud components update
 ```
-4. Cloud Scheduler depends on the App Engine application. Create an app engine application in the host project. Replace the region. List of regions where App-Engine is available can be found [here](https://cloud.google.com/about/locations#region).
-```
+
+4. Cloud Scheduler depends on the App Engine application. Create an App Engine
+application in the host project. Replace the region. List of regions where
+App Engine is available can be found
+[here](https://cloud.google.com/about/locations#region).
+
+```sh
 gcloud app create --region=<region>
 ```
-Note: Cloud Scheduler (below) needs to be in the same region as App Engine. Use the same region in terraform as mentioned here. Also, selected region should have a VPC subnet available in the region for the DataFlow deployment.
+
+Note: Cloud Scheduler (below) needs to be in the same region as App Engine.
+Use the same region in terraform as mentioned here.
+
 The output should look like:
-```
+
+```sh
 You are creating an app for project [quota-monitoring-project-3].
 WARNING: Creating an App Engine application for a project is irreversible and the region
 cannot be changed. More information about regions is at
@@ -90,62 +153,77 @@ cannot be changed. More information about regions is at
 
 Creating App Engine application in project [quota-monitoring-project-1] and region [us-east1]....done.                                                                                                                               
 Success! The app is now created. Please use `gcloud app deploy` to deploy your first app.
+```
 
-```
 ### 3.3 Create Service Account
-1. In local workstation, setup environment variables. Replace the name of the Service Account in the commands below
-```
+
+1. In local workstation, setup environment variables. Replace the name of the
+Service Account in the commands below
+
+```sh
 export DEFAULT_PROJECT_ID=$(gcloud config get-value core/project 2> /dev/null)
 export SERVICE_ACCOUNT_ID="sa-"$DEFAULT_PROJECT_ID 
 export DISPLAY_NAME="sa-"$DEFAULT_PROJECT_ID 
 ```
+
 2. Verify host project Id.
-```
+
+```sh
 echo $DEFAULT_PROJECT_ID
 ```
+
 3. Create Service Account
-```
+
+```sh
 gcloud iam service-accounts create $SERVICE_ACCOUNT_ID --description="Service Account to scan quota usage" --display-name=$DISPLAY_NAME
 ```
+
 The output should look like:
-```
+
+```sh
 Created service account [sa-quota-monitoring-project-1].
 ```
-### 3.4 Grant Roles to Service Account
-#### 3.4.1 Grant Roles in the Host Project
-1. Following roles should be added to the Service Account in the host project i.e. Project A:
-- BigQuery
-  - BigQuery Data Editor
-  - BigQuery Job User
-- Cloud Functions
-  - Cloud Functions Admin
-- Cloud Scheduler
-  - Cloud Scheduler Admin
-- Pub/Sub 
-  - Pub/Sub Admin
-- Run Terraform
-  - Service Account User
-  - Enable APIs
-  - Service Usage Admin 
-- Storage Bucket
-  - Storage Admin
-- Scan Quotas
-  - Cloud Asset Viewer
-  - Compute Network Viewer
-  - Compute Viewer
-- Monitoring
-  - Notification Channel Editor
-  - Alert Policy Editor
-  - Viewer
-  - Metric Writer
-- Logs
-  - Logs Configuration Writer	
-  - Log Writer
-- IAM
-  - Security Admin
 
-2. Run following commands to assign the roles:
-```
+### 3.4 Grant Roles to Service Account
+
+#### 3.4.1 Grant Roles in the Host Project
+
+The following roles need to be added to the Service Account in the host
+project i.e. Project A:
+
+*   BigQuery
+    *   BigQuery Data Editor
+    *   BigQuery Job User
+*   Cloud Functions
+    *   Cloud Functions Admin
+*   Cloud Scheduler
+    *   Cloud Scheduler Admin
+*   Pub/Sub
+    *   Pub/Sub Admin
+*   Run Terraform
+    *   Service Account User
+    *   Enable APIs
+    *   Service Usage Admin
+*   Storage Bucket
+    *   Storage Admin
+*   Scan Quotas
+    *   Cloud Asset Viewer
+    *   Compute Network Viewer
+    *   Compute Viewer
+*   Monitoring
+    *   Notification Channel Editor
+    *   Alert Policy Editor
+    *   Viewer
+    *   Metric Writer
+*   Logs
+    *   Logs Configuration Writer
+    *   Log Writer
+*   IAM
+    *   Security Admin
+
+1. Run following commands to assign the roles:
+
+```sh
 gcloud projects add-iam-policy-binding $DEFAULT_PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com" --role="roles/bigquery.dataEditor" --condition=None
 
 gcloud projects add-iam-policy-binding $DEFAULT_PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com" --role="roles/bigquery.jobUser" --condition=None
@@ -184,21 +262,27 @@ gcloud projects add-iam-policy-binding $DEFAULT_PROJECT_ID --member="serviceAcco
 ```
 
 #### 3.4.2 Grant Roles in the Target Folder
-1. SKIP THIS STEP IF THE FOLDER IS NOT THE TARGET TO SCAN QUOTA. 
 
-If you want to scan projects in the folder,  add following roles to the Service account created in the previous step at the target folder A:
-- Cloud Asset Viewer
-- Compute Network Viewer
-- Compute Viewer
-- Folder Viewer
-- Monitoring Viewer
+**SKIP THIS STEP IF THE FOLDER IS NOT THE TARGET TO SCAN QUOTA**
 
-2. Set target folder id
-```
+If you want to scan projects in the folder, add following roles to the Service
+Account created in the previous step at the target folder A:
+
+*   Cloud Asset Viewer
+*   Compute Network Viewer
+*   Compute Viewer
+*   Folder Viewer
+*   Monitoring Viewer
+
+1. Set target folder id
+
+```sh
 export TARGET_FOLDER_ID=<target folder id like 38659473572>
 ```
-3. Run following command
-```
+
+2. Run the following commands add to the roles to the service account
+
+```sh
 gcloud alpha resource-manager folders add-iam-policy-binding  $TARGET_FOLDER_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com" --role="roles/cloudasset.viewer"
 
 gcloud alpha resource-manager folders add-iam-policy-binding  $TARGET_FOLDER_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com" --role="roles/compute.networkViewer"
@@ -213,24 +297,30 @@ gcloud alpha resource-manager folders add-iam-policy-binding  $TARGET_FOLDER_ID 
 Note: If this fails, run the commands again
 
 #### 3.4.3 Grant Roles in the Target Organization
-1. SKIP THIS STEP IF THE ORGANIZATION IS NOT THE TARGET. 
 
-If you want to scan projects in the org, add following roles to the Service account created in the previous step at the Org A:
-- Cloud Asset Viewer
-- Compute Network Viewer
-- Compute Viewer
-- Org Viewer
-- Folder Viewer
-- Monitoring Viewer
+**SKIP THIS STEP IF THE ORGANIZATION IS NOT THE TARGET**
 
-<img src="img/service_account_roles.png" align="center" />
+If you want to scan projects in the org, add following roles to the Service
+Account created in the previous step at the Org A:
 
-2. Set target organization id
-```
+*   Cloud Asset Viewer
+*   Compute Network Viewer
+*   Compute Viewer
+*   Org Viewer
+*   Folder Viewer
+*   Monitoring Viewer
+
+![org-service-acccount-roles](img/service_account_roles.png)
+
+1. Set target organization id
+
+```sh
 export TARGET_ORG_ID=<target org id ex. 38659473572>
 ```
-3. Run following commands
-```
+
+2. Run the following commands to add to the roles to the service account
+
+```sh
 gcloud organizations add-iam-policy-binding  $TARGET_ORG_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com" --role="roles/cloudasset.viewer" --condition=None
 
 gcloud organizations add-iam-policy-binding  $TARGET_ORG_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com"  --role="roles/compute.networkViewer" --condition=None
@@ -243,12 +333,18 @@ gcloud organizations add-iam-policy-binding  $TARGET_ORG_ID --member="serviceAcc
 
 gcloud organizations add-iam-policy-binding  $TARGET_ORG_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com"  --role="roles/monitoring.viewer" --condition=None
 ```
+
 ### 3.5 Download Service Account Key File
-Create Service Account key from host project A. The service account key file will be downloaded to your machine as CREDENTIALS_FILE.json. After you download the key file, you cannot download it again.
-```
+
+Create Service Account key from host project A. The service account key file
+will be downloaded to your machine as CREDENTIALS_FILE.json. After you download
+the key file, you cannot download it again.
+
+```sh
 gcloud iam service-accounts keys create CREDENTIALS_FILE.json \
     --iam-account=$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com
 ```
+
 ### 3.6 Download Terraform File
 1. Download terraform file
 ```
@@ -259,10 +355,10 @@ gsutil cp gs://quota-monitoring-solution-source/v4.2/variables.tf .
 gsutil cp gs://quota-monitoring-solution-source/v4.2/terraform.tfvars .
 ```
 2. Verify that you have these 4 files in your local directory:
-   - CREDENTIALS_FILE.json
-   - terraform/main.tf
-   - terraform/variables.tf
-   - terraform/terraform.tfvars
+   *   CREDENTIALS_FILE.json
+   *   terraform/main.tf
+   *   terraform/variables.tf
+   *   terraform/terraform.tfvars
 ### 3.7 Configure Terraform
 1. Open terraform.tfvars file in your favourite editor and change values for the variable 
 2. Values for variable source_code_bucket_name, source_code_zip and source_code_notification_zip are for source code zip in the storage bucket. These are links to the Cloud Function source code. If you want to upgrade to latest code changes everytime you run 'terraform apply', change to this code source repository. DO NOT CHANGE if you do not want to receive latest code changes while running 'terraform apply' everytime after deployment. 
@@ -274,14 +370,14 @@ vi terraform.tfvars
 
 ### 3.8 Run Terraform
 1. Run terraform commands
-   - terraform init
-   - terraform plan
-   - terraform apply 
-     - On Prompt Enter a value: yes
+   *   terraform init
+   *   terraform plan
+   *   terraform apply 
+       *   On Prompt Enter a value: yes
 
 2. This will:
-   - Enable required APIs
-   - Create all resources and connect them. 
+   *   Enable required APIs
+   *   Create all resources and connect them. 
 *Note: In case terraform fails, run terraform plan and terraform apply again*
 ### 3.9 Testing
 1. Click ‘Run Now’ on Cloud Job scheduler. 
@@ -395,10 +491,10 @@ Quota monitoring reports can be scheduled from the Data Studio dashboard using �
 
 ### 3.11 Alerting
 The alerts about services nearing their quota limits can be configured to be sent via email as well as following external services:
-- Slack
-- PagerDuty
-- SMS
-- Custom Webhooks
+*   Slack
+*   PagerDuty
+*   SMS
+*   Custom Webhooks
 
 #### 3.11.1 Slack Configuration
 To configure notifications to be sent to a Slack channel, you must have the Monitoring NotificationChannel Editor role on the host project.
@@ -408,14 +504,14 @@ To configure notifications to be sent to a Slack channel, you must have the Moni
 2. In the Monitoring navigation pane, click  Alerting.
 3. Click Edit notification channels.
 4. In the Slack section, click Add new. This brings you to the Slack sign-in page:
-  - Select your Slack workspace.
-  - Click Allow to enable Google Cloud Monitoring access to your Slack workspace. This action takes you back to the Monitoring configuration page for your notification channel.
-  - Enter the name of the Slack channel you want to use for notifications.
-  - Enter a display name for the notification channel.
+    *   Select your Slack workspace.
+    *   Click Allow to enable Google Cloud Monitoring access to your Slack workspace. This action takes you back to the Monitoring configuration page for your notification channel.
+    *   Enter the name of the Slack channel you want to use for notifications.
+    *   Enter a display name for the notification channel.
 5. In your Slack workspace:
-  - Invite the Monitoring app to the channel by sending the following message in the channel:
-  - /invite @Google Cloud Monitoring
-  - Be sure you invite the Monitoring app to the channel you specified when creating the notification channel in Monitoring.
+    *   Invite the Monitoring app to the channel by sending the following message in the channel:
+    *   /invite @Google Cloud Monitoring
+    *   Be sure you invite the Monitoring app to the channel you specified when creating the notification channel in Monitoring.
 
 ##### 3.11.1.2 Configuring Alerting Policy
 1. In the Alerting section, click on Policies.
@@ -432,12 +528,12 @@ You should now receive alerts in your Slack channel whenever a quota reaches the
 ### 4.1 V4: Quota Monitoring across GCP services
 
 #### New
-- The new version provides visibility into Quotas across various GCP services beyond the original GCE (Compute). 
-- New Data Studio Dashboard template reporting metrics across GCP services
+*   The new version provides visibility into Quotas across various GCP services beyond the original GCE (Compute). 
+*   New Data Studio Dashboard template reporting metrics across GCP services
 
 #### Known Limitations
-- The records are grouped by hour. Scheduler need to be configured to start running preferably at the beginning of the hour. 
-- Out of the box solution is configured to scan quotas ‘once every day’. The SQL query to build the dashboard uses current date to filter the records. If you change the frequency, make changes to the query to rightly reflect the latest data. 
+*   The records are grouped by hour. Scheduler need to be configured to start running preferably at the beginning of the hour. 
+*   Out of the box solution is configured to scan quotas ‘once every day’. The SQL query to build the dashboard uses current date to filter the records. If you change the frequency, make changes to the query to rightly reflect the latest data. 
 
 ## 5. What is Next?
 1. Graphs (Quota utilization over a period of time)

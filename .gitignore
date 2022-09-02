@@ -2,3 +2,5 @@ sendgrid.env
 /target
 .*
 !/.gitignore
+!/.github
+!/.mdl*
