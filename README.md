@@ -34,7 +34,8 @@ The architecture is built using Google Cloud managed services - Cloud Functions,
   - [3.4.1 Grant Roles in the Host Project](#341-grant-roles-in-the-host-project)
   - [3.4.2 Grant Roles in the Target Folder](#342-grant-roles-in-the-target-folder)
   - [3.4.3 Grant Roles in the Target Organization](#343-grant-roles-in-the-target-organization)
-- [3.6 Download Service Account Key File](#35-download-service-account-key-file)
+- [3.5 Download the Source Code](#35-download-the-source-code)
+- [3.6 Download Service Account Key File](#36-download-service-account-key-file)
 - [3.5 Download Terraform File](#36-download-terraform-file)
 - [3.7 Configure Terraform](#37-configure-terraform)
 - [3.8 Run Terraform](#38-run-terraform)
@@ -243,30 +244,39 @@ gcloud organizations add-iam-policy-binding  $TARGET_ORG_ID --member="serviceAcc
 
 gcloud organizations add-iam-policy-binding  $TARGET_ORG_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com"  --role="roles/monitoring.viewer" --condition=None
 ```
-### 3.5 Download Service Account Key File
-Create Service Account key from host project A. The service account key file will be downloaded to your machine as CREDENTIALS_FILE.json. After you download the key file, you cannot download it again.
+
+### 3.5 Download the Source Code
+
+1. Clone the Quota Management Solution repo
+
+```sh
+git clone https://github.com/google/quota-monitoring-solution.git quota-monitorings-solution
 ```
-gcloud iam service-accounts keys create CREDENTIALS_FILE.json \
+
+2. Change directories into the Terraform example
+
+```sh
+cd ./quota-monitorings-solution/terraform/example
+```
+
+### 3.6 Download Service Account Key File
+
+Create Service Account key from host project A. The service account key file will be downloaded to your machine as key.json. After you download the key file, you cannot download it again.
+
+```sh
+gcloud iam service-accounts keys create key.json \
     --iam-account=$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com
 ```
-### 3.6 Download Terraform File
-1. Download terraform file
-```
-mkdir terraform
-cd terraform
-gsutil cp gs://quota-monitoring-solution-source/v4.2/main.tf .
-gsutil cp gs://quota-monitoring-solution-source/v4.2/variables.tf .
-gsutil cp gs://quota-monitoring-solution-source/v4.2/terraform.tfvars .
-```
-2. Verify that you have these 4 files in your local directory:
-   - CREDENTIALS_FILE.json
-   - terraform/main.tf
-   - terraform/variables.tf
-   - terraform/terraform.tfvars
+
 ### 3.7 Configure Terraform
-1. Open terraform.tfvars file in your favourite editor and change values for the variable 
-2. Values for variable source_code_bucket_name, source_code_zip and source_code_notification_zip are for source code zip in the storage bucket. These are links to the Cloud Function source code. If you want to upgrade to latest code changes everytime you run 'terraform apply', change to this code source repository. DO NOT CHANGE if you do not want to receive latest code changes while running 'terraform apply' everytime after deployment. 
-3. For region, use the same region as used for app engine in earlier steps.
+1. Verify that you have these 4 files in your local directory:
+   - key.json
+   - main.tf
+   - variables.tf
+   - terraform.tfvars
+2. Open terraform.tfvars file in your favourite editor and change values for the variable 
+3. Values for variable source_code_bucket_name, source_code_zip and source_code_notification_zip are for source code zip in the storage bucket. These are links to the Cloud Function source code. If you want to upgrade to latest code changes everytime you run 'terraform apply', change to this code source repository. DO NOT CHANGE if you do not want to receive latest code changes while running 'terraform apply' everytime after deployment. 
+4. For region, use the same region as used for app engine in earlier steps.
 ```
 vi terraform.tfvars
 ```
