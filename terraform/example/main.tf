@@ -29,7 +29,7 @@ provider "google" {
 }
 
 module "qms" {
-  source = "./modules/qms"
+  source = "../modules/qms"
 
   project_id                    = var.project_id
   region                        = var.region
