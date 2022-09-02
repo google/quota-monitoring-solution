@@ -13,11 +13,6 @@ Copyright 2022 Google LLC
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-provider "google" {
-  credentials = file("../CREDENTIALS_FILE.json")
-  project     = var.project_id
-  region      = var.region
-}
 
 # Enable Cloud Resource Manager API
 module "project-service-cloudresourcemanager" {
@@ -362,11 +357,6 @@ resource "google_monitoring_notification_channel" "email0" {
 #    service_key = "one"
 #  }
 #}
-
-#Email notification channel 1 output
-output "email0_id" {
-  value = google_monitoring_notification_channel.email0.name
-}
 
 #Log sink to route logs to log bucket
 resource "google_logging_project_sink" "instance-sink" {
