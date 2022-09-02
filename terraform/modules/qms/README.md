@@ -77,4 +77,5 @@ module "qms" {
 | Name | Description |
 |------|-------------|
 | <a name="output_email0_id"></a> [email0\_id](#output\_email0\_id) | Full resource identifier for the notification channel. |
+
 <!-- END_TF_DOCS -->
