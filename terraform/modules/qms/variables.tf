@@ -85,25 +85,25 @@ variable "source_code_bucket_name" {
 variable "source_code_zip" {
   description = "Value of List and Scan Project Quotas source code zip file"
   type        = string
-  default     = "quota-monitoring-solution.zip"
+  default     = "v4.2/quota-monitoring-solution-v4.2.zip"
 }
 
 variable "source_code_notification_zip" {
   description = "Value of Notification Quota Alerts source code zip file"
   type        = string
-  default     = "quota-monitoring-notification.zip"
+  default     = "v4.2/quota-monitoring-notification-v4.2.zip"
 }
 
 variable "source_code_repo_url" {
   description = "Value of List and Scan Project Quotas source code git url"
   type        = string
-  default     = "https://github.com/GoogleCloudPlatform/professional-services/tree/main/tools/quota-monitoring-alerting/quota-scan"
+  default     = "https://github.com/google/quota-monitoring-solution/tree/main/quota-scan"
 }
 
 variable "source_code_notification_repo_url" {
   description = "Value of Notification Quota Alerts source code git url"
   type        = string
-  default     = "https://github.com/GoogleCloudPlatform/professional-services/tree/main/tools/quota-monitoring-alerting/quota-notification"
+  default     = "https://github.com/google/quota-monitoring-solution/tree/main/quota-notification"
 }
 
 variable "cloud_function_list_project" {
