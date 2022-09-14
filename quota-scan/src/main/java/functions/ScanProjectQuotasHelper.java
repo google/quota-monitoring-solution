@@ -30,11 +30,14 @@ import com.google.monitoring.v3.TimeInterval;
 import com.google.monitoring.v3.TimeSeries;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.util.Timestamps;
+
+import functions.eventpojos.GCPProject;
 import functions.eventpojos.GCPResourceClient;
 import functions.eventpojos.ProjectQuota;
 import functions.eventpojos.TimeSeriesQuery;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,26 +92,32 @@ public class ScanProjectQuotasHelper {
   /*
    * API to get Quota from Time Series APIs with filters
    * */
-  static ListTimeSeriesPagedResponse getQuota(String projectName, String filter) {
-    ListTimeSeriesPagedResponse projectQuotas = null;
+  static List<ProjectQuota> getQuota(GCPProject gcpProject, String filter, Boolean isLimit) {
+    List<ProjectQuota> projectQuotas = new ArrayList<>();
+
     try (MetricServiceClient metricServiceClient = MetricServiceClient.create()) {
       TimeInterval interval = getTimeInterval();
       // Prepares the list time series request with headers
       ListTimeSeriesRequest request =
           ListTimeSeriesRequest.newBuilder()
-              .setName(projectName)
+              .setName(gcpProject.getProjectName())
               .setFilter(filter)
               .setInterval(interval)
               .build();
 
       // Send the request to list the time series
-      projectQuotas = metricServiceClient.listTimeSeries(request);
+      ListTimeSeriesPagedResponse response = metricServiceClient.listTimeSeries(request);
+      for (TimeSeries ts : response.iterateAll()) {
+        projectQuotas.add(populateProjectQuota(ts, gcpProject.getProjectId(), isLimit));
+      }
+
     } catch (IOException e) {
       logger.log(
           Level.SEVERE,
-          "Error fetching timeseries data for project: " + projectName + e.getMessage(),
+          "Error fetching timeseries data for project: " + gcpProject.getProjectName() + e.getMessage(),
           e);
     }
+
     return projectQuotas;
   }
 
@@ -130,12 +139,9 @@ public class ScanProjectQuotasHelper {
    * */
   static void loadBigQueryTable(
       GCPResourceClient gcpResourceClient,
-      ListTimeSeriesPagedResponse timeSeriesList,
-      String projectId,
-      Boolean isLimit) {
-    for (TimeSeries ts : timeSeriesList.iterateAll()) {
-      ProjectQuota projectQuota = populateProjectQuota(ts, projectId, isLimit);
-      Map<String, Object> row = createBQRow(projectQuota);
+      List<ProjectQuota> projectQuotas) {
+    for (ProjectQuota pq : projectQuotas) {
+      Map<String, Object> row = createBQRow(pq);
       tableInsertRows(gcpResourceClient, row);
     }
   }

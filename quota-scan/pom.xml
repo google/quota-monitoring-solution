@@ -196,7 +196,7 @@
         <artifactId>function-maven-plugin</artifactId>
         <version>0.9.2</version>
         <configuration>
-          <functionTarget>functions.ScanProjectAllQuotas</functionTarget>
+          <functionTarget>functions.ScanProjectQuotas</functionTarget>
         </configuration>
       </plugin>
     </plugins>
