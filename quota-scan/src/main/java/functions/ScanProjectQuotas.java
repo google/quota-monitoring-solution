@@ -20,15 +20,16 @@ import static functions.ScanProjectQuotasHelper.loadBigQueryTable;
 
 import com.google.cloud.functions.BackgroundFunction;
 import com.google.cloud.functions.Context;
-import com.google.cloud.monitoring.v3.MetricServiceClient.ListTimeSeriesPagedResponse;
 import com.google.monitoring.v3.ProjectName;
 import functions.eventpojos.GCPProject;
 import functions.eventpojos.GCPResourceClient;
 import functions.eventpojos.PubSubMessage;
 import functions.eventpojos.TimeSeriesQuery;
+import functions.eventpojos.ProjectQuota;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -123,8 +124,8 @@ public class ScanProjectQuotas implements BackgroundFunction<PubSubMessage> {
       GCPProject gcpProject,
       Boolean isLimitData)
       throws IOException {
-    ListTimeSeriesPagedResponse projectQuotas = getQuota(gcpProject.getProjectName(), filter);
-    loadBigQueryTable(gcpResourceClient, projectQuotas, gcpProject.getProjectId(), isLimitData);
+    List<ProjectQuota> projectQuotas = getQuota(gcpProject, filter, isLimitData);
+    loadBigQueryTable(gcpResourceClient, projectQuotas);
     logger.log(
         Level.INFO, "Quotas loaded successfully for project Id:" + gcpProject.getProjectId());
   }
