@@ -85,13 +85,13 @@ variable "source_code_bucket_name" {
 variable "source_code_zip" {
   description = "Value of List and Scan Project Quotas source code zip file"
   type        = string
-  default     = "v4.2/quota-monitoring-solution-v4.2.zip"
+  default     = "v4.3/quota-monitoring-solution-v4.3.zip"
 }
 
 variable "source_code_notification_zip" {
   description = "Value of Notification Quota Alerts source code zip file"
   type        = string
-  default     = "v4.2/quota-monitoring-notification-v4.2.zip"
+  default     = "v4.3/quota-monitoring-notification-v4.3.zip"
 }
 
 variable "source_code_repo_url" {
