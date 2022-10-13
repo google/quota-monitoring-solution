@@ -14,7 +14,12 @@ Copyright 2022 Google LLC
    limitations under the License.
 */
 
-output "email0_id" {
-  value = google_monitoring_notification_channel.email0.name
-  description = "Full resource identifier for the notification channel."
+output "email_notif_channels" {
+  value = [ for e in google_monitoring_notification_channel.emails  : e.name ]
+  description = "List of full resource identifiers for email notification channels"
+}
+
+output "pubsub_notif_channels" {
+  value = [ for p in google_monitoring_notification_channel.pubsubs : p.name ]
+  description = "List of full resource identifiers for pubsub notification channels"
 }

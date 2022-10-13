@@ -259,9 +259,15 @@ variable "threshold" {
   type        = string
 }
 
-variable "notification_email_address" {
-  description = "Email Address to receive email notifications"
-  type        = string
+variable "notification_emails" {
+  description = "List of email addresses to receive email notifications"
+  type        = list(string)
+}
+
+variable "notification_pubsubs" {
+  description = "List of PubSub IDs to create notification chanels from, which will receive notifications"
+  type        = list(string)
+  default     = []
 }
 
 variable "alert_log_bucket_name" {

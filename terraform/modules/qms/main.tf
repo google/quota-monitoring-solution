@@ -335,14 +335,29 @@ resource "google_logging_metric" "quota_logging_metric" {
   }
 }
 
-#Set notification channels below
-#Add Notification channel - Email
-resource "google_monitoring_notification_channel" "email0" {
-  display_name = "Oncall"
+# Add Email notification channels
+resource "google_monitoring_notification_channel" "emails" {
+  count        = length(var.notification_emails)
+  display_name = "qms-email-${count.index}"
+  description  = "Email for QMS alerts"
   type         = "email"
   depends_on   = [module.project-services]
+
   labels = {
-    email_address = var.notification_email_address
+    email_address = var.notification_emails[count.index]
+  }
+}
+
+# Add Pub/Sub notification channels
+resource "google_monitoring_notification_channel" "pubsubs" {
+  count        = length(var.notification_pubsubs)
+  display_name = "qms-pubsub-${count.index}"
+  description  = "Pub/Sub channel for QMS alerts"
+  type         = "pubsub"
+  depends_on   = [module.project-services]
+
+  labels = {
+    topic = var.notification_pubsubs[count.index]
   }
 }
 
@@ -413,8 +428,10 @@ resource "google_monitoring_alert_policy" "alert_policy_quota" {
     mime_type = "text/markdown"
     content   = "$${metric.label.data}"
   }
-  notification_channels = [
-    google_monitoring_notification_channel.email0.name
-  ]
+
+  notification_channels = flatten([
+    [ for p in google_monitoring_notification_channel.pubsubs : p.name ],
+    [ for e in google_monitoring_notification_channel.emails  : e.name ],
+  ])
   depends_on = [module.project-services]
 }

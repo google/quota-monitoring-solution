@@ -15,7 +15,7 @@ module "qms" {
   folders                       = "[678901]"
   organizations                 = "[123456]"
   alert_log_bucket_name         = "your-alert-log-bucket"
-  notification_email_address    = "alert@example.com"
+  notification_emails           = [ "alert@example.com", "oncall@example.com" ]
   threshold                     = "80"
 }
 ```
@@ -51,7 +51,8 @@ module "qms" {
 | <a name="input_cloud_function_scan_project_timeout"></a> [cloud\_function\_scan\_project\_timeout](#input\_cloud\_function\_scan\_project\_timeout) | Value of the timeout for the Cloud Function to scan Project quotas | `number` | `540` | no |
 | <a name="input_folders"></a> [folders](#input\_folders) | Value of the list of folders to be scanned for quota | `string` | n/a | yes |
 | <a name="input_log_sink_name"></a> [log\_sink\_name](#input\_log\_sink\_name) | Name for Log Sink | `string` | `"quota-monitoring-sink"` | no |
-| <a name="input_notification_email_address"></a> [notification\_email\_address](#input\_notification\_email\_address) | Email Address to receive email notifications | `string` | n/a | yes |
+| <a name="input_notification_emails"></a> [notification\_emails](#input\_notification\_emails) | Email Addresses to receive email notifications | `list(string)` | `[]` | no |
+| <a name="input_notification_pubsubs"></a> [notification\_pubsubs](#input\_notification\_pubsubs) | IDs of Pub/Sub topics to receive notifications | `list(string)` | `[]` | no |
 | <a name="input_organizations"></a> [organizations](#input\_organizations) | Value of the list of organization Ids to scanned for quota | `string` | n/a | yes |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | Value of the Project Id to deploy the solution | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | Value of the region to deploy the solution. Use the same region as used for App Engine | `string` | n/a | yes |
@@ -76,6 +77,7 @@ module "qms" {
 
 | Name | Description |
 |------|-------------|
-| <a name="output_email0_id"></a> [email0\_id](#output\_email0\_id) | Full resource identifier for the notification channel. |
+| <a name="output_email_notif_channels"></a> [email\_notif\_channels](#output\_email\_notif\_channels) | List of full resource identifiers for email notification channels |
+| <a name="output_pubsub_notif_channels"></a> [pubsub\_notif\_channels](#output\_pubsub\_notif\_channels) | List of full resource identifiers for pubsub notification channels |
 
 <!-- END_TF_DOCS -->

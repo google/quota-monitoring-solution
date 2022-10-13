@@ -381,7 +381,24 @@ gcloud iam service-accounts keys create key.json \
     vi terraform.tfvars
     ```
 
-![updated-tfvars](img/terraform-updated.png)
+    ```go
+    // Update values
+    project_id            = ""
+    region                = ""
+    service_account_email = ""
+    folders               = "[]"
+    organizations         = "[]"
+    alert_log_bucket_name = ""
+    notification_emails   = [ "" ]
+
+    // Optional to update
+    source_code_bucket_name       = "quota-monitoring-solution-source"
+    source_code_zip               = "v4.2/quota-monitoring-solution-v4.2.zip"
+    source_code_notification_zip  = "v4.2/quota-monitoring-notification-v4.2.zip"
+    scheduler_cron_job_frequency  = "0 0 * * *"
+    Alert_data_scanning_frequency = "every 12 hours"
+    threshold                     = "80"
+    ```
 
 ### 3.8 Run Terraform
 
