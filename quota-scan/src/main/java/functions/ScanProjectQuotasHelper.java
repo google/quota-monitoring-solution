@@ -73,8 +73,8 @@ public class ScanProjectQuotasHelper {
     "     | group_by" +
     "         [resource.service, resource.project_id, resource.location," +
     "         metric.quota_metric]," +
-    "         [value_usage_aggregate: aggregate(value.usage)," +
-    "         value_usage_max: max(value.usage), value_usage_min: min(value.usage)]" +
+    "         [value_usage_aggregate: aggregate(value.net_usage)," +
+    "         value_usage_max: max(value.net_usage), value_usage_min: min(value.net_usage)]" +
     " ; limit:" +
     "     metric 'serviceruntime.googleapis.com/quota/limit'" +
     "     | filter resource.project_id = '%1$s'" +
