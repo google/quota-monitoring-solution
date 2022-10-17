@@ -60,20 +60,36 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 
 ### Content
 
-*   [3.1 Prerequisites](#31-prerequisites)
-*   [3.2 Initial Setup](#32-initial-setup)
-*   [3.3 Create Service Account](#33-create-service-account)
-*   [3.4 Grant Roles to Service Account](#34-grant-roles-to-service-account)
-    *   [3.4.1 Grant Roles in the Host Project](#341-grant-roles-in-the-host-project)
-    *   [3.4.2 Grant Roles in the Target Folder](#342-grant-roles-in-the-target-folder)
-    *   [3.4.3 Grant Roles in the Target Organization](#343-grant-roles-in-the-target-organization)
-*   [3.5 Download the Source Code](#35-download-the-source-code)
-*   [3.6 Download Service Account Key File](#36-download-service-account-key-file)
-*   [3.7 Configure Terraform](#37-configure-terraform)
-*   [3.8 Run Terraform](#38-run-terraform)
-*   [3.9 Testing](#39-testing)
-*   [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup)
-*   [3.11 Scheduled Reporting](#311-scheduled-reporting)
+- [Quota Monitoring and Alerting](#quota-monitoring-and-alerting)
+  - [1. Summary](#1-summary)
+    - [1.1 Four Initial Features](#11-four-initial-features)
+  - [2. Architecture](#2-architecture)
+  - [3. Deployment Guide](#3-deployment-guide)
+    - [Content](#content)
+    - [3.1 Prerequisites](#31-prerequisites)
+    - [3.2 Initial Setup](#32-initial-setup)
+    - [3.3 Create Service Account](#33-create-service-account)
+    - [3.4 Grant Roles to Service Account](#34-grant-roles-to-service-account)
+      - [3.4.1 Grant Roles in the Host Project](#341-grant-roles-in-the-host-project)
+      - [3.4.2 Grant Roles in the Target Folder](#342-grant-roles-in-the-target-folder)
+      - [3.4.3 Grant Roles in the Target Organization](#343-grant-roles-in-the-target-organization)
+    - [3.5 Download the Source Code](#35-download-the-source-code)
+    - [3.6 Download Service Account Key File](#36-download-service-account-key-file)
+    - [3.7 Configure Terraform](#37-configure-terraform)
+    - [3.8 Run Terraform](#38-run-terraform)
+    - [3.9 Testing](#39-testing)
+    - [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup)
+    - [3.11 Scheduled Reporting](#311-scheduled-reporting)
+    - [3.11 Alerting](#311-alerting)
+      - [3.11.1 Slack Configuration](#3111-slack-configuration)
+        - [3.11.1.1 Create Notification Channel](#31111-create-notification-channel)
+        - [3.11.1.2 Configuring Alerting Policy](#31112-configuring-alerting-policy)
+  - [4. Release Note](#4-release-note)
+    - [4.1 V4: Quota Monitoring across GCP services](#41-v4-quota-monitoring-across-gcp-services)
+      - [New](#new)
+      - [Known Limitations](#known-limitations)
+  - [5. What is Next](#5-what-is-next)
+  - [5. Contact Us](#5-contact-us)
 
 ### 3.1 Prerequisites
 
@@ -440,55 +456,57 @@ Note: In case terraform fails, run terraform plan and terraform apply again
     Note: Replace BigQuery project id, dataset id and table name:
 
     ```sql
-    WITH quota AS
-    ( SELECT
-    project_id as project_id,
-    region,
-    metric,
-    DATE_TRUNC(addedAt, HOUR) AS HOUR,
-    MAX(CASE
-    WHEN mv_type='limit' THEN m_value
-    ELSE
-    NULL
-    END
-    ) AS q_limit,
-    MAX(CASE
-    WHEN mv_type='usage' THEN m_value
-    ELSE
-    NULL
-    END
-    ) AS usage
-    FROM
-    quota-monitoring-project-34.quota_monitoring_dataset.quota_monitoring_table
-    GROUP BY
-    1,
-    2,
-    3,
-    4 )
+    WITH
+        quota AS (
+        SELECT
+            project_id AS project_id,
+            region,
+            metric,
+            addedAt,
+            MAX(CASE
+                WHEN mv_type='limit' THEN m_value
+            ELSE
+            NULL
+            END
+            ) AS q_limit,
+            MAX(CASE
+                WHEN mv_type='usage' THEN m_value
+            ELSE
+            NULL
+            END
+            ) AS usage
+        FROM
+            quota-monitoring-project-49.quota_monitoring_dataset.quota_monitoring_table
+        GROUP BY
+            1,
+            2,
+            3,
+            4 )
     SELECT
-    project_id,
-    region,
-    metric,
-    HOUR,
-    CASE
-    WHEN q_limit='9223372036854775807' THEN 'unlimited'
-    ELSE
-    q_limit
+        project_id,
+        region,
+        metric,
+        addedAt,
+        CASE
+            WHEN q_limit='9223372036854775807' THEN 'unlimited'
+        ELSE
+        q_limit
     END
-    AS q_limit,
-    usage,
-    ROUND((SAFE_DIVIDE(CAST(t.usage AS BIGNUMERIC),
-    CAST(t.q_limit AS BIGNUMERIC))*100),2) AS consumption
+        AS q_limit,
+        usage,
+        ROUND((SAFE_DIVIDE(CAST(t.usage AS BIGNUMERIC), CAST(t.q_limit AS BIGNUMERIC))*100),2) AS consumption
     FROM (
-    select *,
-    RANK() OVER (PARTITION BY project_id,region,metric ORDER BY HOUR desc) AS latest_row
-    FROM quota) t
+        SELECT
+            *,
+            RANK() OVER (PARTITION BY project_id, region, metric ORDER BY addedAt DESC) AS latest_row
+        FROM
+            quota) t
     WHERE
-    latest_row=1
-    AND usage is not null
-    AND q_limit is not null
-    AND usage != '0'
-    AND q_limit != '0'
+        latest_row=1
+        AND usage IS NOT NULL
+        AND q_limit IS NOT NULL
+        AND usage != '0'
+        AND q_limit != '0'
     ```
 
 8.  After making sure that query is returning results, replace it in the Data
