@@ -1,0 +1,43 @@
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: terraform-module
+          package-name: ${{env.ACTION_NAME}}
+          extra-files: |
+            terraform/modules/qms/variables.tf
+      - uses: actions/checkout@master
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          fetch-depth: 0
+      - uses: thedoctor0/zip-release@main
+        if: ${{ steps.release.outputs.release_created }}
+        name: Create Zip for quota-scan
+        with:
+          type: 'zip'
+          filename: 'quota-monitoring-solution.zip'
+          directory: quota-scan
+      - uses: thedoctor0/zip-release@main
+        if: ${{ steps.release.outputs.release_created }}
+        name: Create Zip for quota-notification
+        with:
+          type: 'zip'
+          filename: 'quota-monitoring-notification.zip'
+          directory: quota-notification
+      - uses: ncipollo/release-action@v1
+        if: ${{ steps.release.outputs.release_created }}
+        name: Upload
+        with:
+          allowUpdates: true
+          artifacts: "quota-scan/quota-monitoring-solution.zip,quota-notification/quota-monitoring-notification.zip"
+          omitBodyDuringUpdate: true
+          tag: ${{ steps.release.outputs.tag_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}

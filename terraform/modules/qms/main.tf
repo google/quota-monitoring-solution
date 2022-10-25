@@ -86,6 +86,29 @@ resource "google_cloud_scheduler_job" "job" {
   }
 }
 
+resource "google_storage_bucket" "bucket_gcf_source" {
+  name          = "${var.project_id}-gcf-source"
+  storage_class = "REGIONAL"
+  location      = var.region
+  force_destroy = "true"
+}
+
+resource "null_resource" "source_code_zip" {
+  triggers = {
+    on_version_change = var.qms_version
+  }
+
+  provisioner "local-exec" {
+    command = "curl -Lo ${source_code_zip} ${var.source_code_base_url}/${var.qms_version}/${source_code_zip}"
+  }
+}
+
+resource "google_storage_bucket_object" "source_code_object" {
+  name   = "${qms_version}-${var.source_code_zip}"
+  bucket = google_storage_bucket.bucket_gcf_source.name
+  source = var.source_code_zip
+}
+
 # cloud function to list projects
 resource "google_cloudfunctions_function" "function-listProjects" {
   name        = var.cloud_function_list_project
@@ -93,8 +116,8 @@ resource "google_cloudfunctions_function" "function-listProjects" {
   runtime     = "java11"
 
   available_memory_mb   = var.cloud_function_list_project_memory
-  source_archive_bucket = var.source_code_bucket_name
-  source_archive_object = var.source_code_zip
+  source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
+  source_archive_object = google_storage_bucket_object.source_code_object.name
   trigger_http          = true
   entry_point           = "functions.ListProjects"
   service_account_email = var.service_account_email
@@ -125,8 +148,8 @@ resource "google_cloudfunctions_function" "function-scanProject" {
   runtime     = "java11"
 
   available_memory_mb   = var.cloud_function_scan_project_memory
-  source_archive_bucket = var.source_code_bucket_name
-  source_archive_object = var.source_code_zip
+  source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
+  source_archive_object = google_storage_bucket_object.source_code_object.name
   entry_point           = "functions.ScanProjectQuotas"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_scan_project_timeout
@@ -156,6 +179,22 @@ resource "google_cloudfunctions_function_iam_member" "invoker-scanProject" {
   member = "serviceAccount:${var.service_account_email}"
 }
 
+resource "null_resource" "source_code_notification_zip" {
+  triggers = {
+    on_version_change = var.qms_version
+  }
+
+  provisioner "local-exec" {
+    command = "curl -Lo ${source_code_notification_zip} ${var.source_code_base_url}/${var.qms_version}/${source_code_notification_zip}"
+  }
+}
+
+resource "google_storage_bucket_object" "source_code_notification_object" {
+  name   = "${qms_version}-${var.source_code_notification_zip}"
+  bucket = google_storage_bucket.bucket_gcf_source.name
+  source = var.source_code_notification_zip
+}
+
 # Third cloud function to send notification
 resource "google_cloudfunctions_function" "function-notificationProject" {
   name        = var.cloud_function_notification_project
@@ -163,8 +202,8 @@ resource "google_cloudfunctions_function" "function-notificationProject" {
   runtime     = "java11"
 
   available_memory_mb   = var.cloud_function_notification_project_memory
-  source_archive_bucket = var.source_code_bucket_name
-  source_archive_object = var.source_code_notification_zip
+  source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
+  source_archive_object = google_storage_bucket_object.source_code_notification_object.name
   entry_point           = "functions.SendNotification"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_notification_project_timeout

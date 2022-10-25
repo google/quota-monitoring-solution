@@ -60,20 +60,36 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 
 ### Content
 
-*   [3.1 Prerequisites](#31-prerequisites)
-*   [3.2 Initial Setup](#32-initial-setup)
-*   [3.3 Create Service Account](#33-create-service-account)
-*   [3.4 Grant Roles to Service Account](#34-grant-roles-to-service-account)
-    *   [3.4.1 Grant Roles in the Host Project](#341-grant-roles-in-the-host-project)
-    *   [3.4.2 Grant Roles in the Target Folder](#342-grant-roles-in-the-target-folder)
-    *   [3.4.3 Grant Roles in the Target Organization](#343-grant-roles-in-the-target-organization)
-*   [3.5 Download the Source Code](#35-download-the-source-code)
-*   [3.6 Download Service Account Key File](#36-download-service-account-key-file)
-*   [3.7 Configure Terraform](#37-configure-terraform)
-*   [3.8 Run Terraform](#38-run-terraform)
-*   [3.9 Testing](#39-testing)
-*   [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup)
-*   [3.11 Scheduled Reporting](#311-scheduled-reporting)
+- [Quota Monitoring and Alerting](#quota-monitoring-and-alerting)
+  - [1. Summary](#1-summary)
+    - [1.1 Four Initial Features](#11-four-initial-features)
+  - [2. Architecture](#2-architecture)
+  - [3. Deployment Guide](#3-deployment-guide)
+    - [Content](#content)
+    - [3.1 Prerequisites](#31-prerequisites)
+    - [3.2 Initial Setup](#32-initial-setup)
+    - [3.3 Create Service Account](#33-create-service-account)
+    - [3.4 Grant Roles to Service Account](#34-grant-roles-to-service-account)
+      - [3.4.1 Grant Roles in the Host Project](#341-grant-roles-in-the-host-project)
+      - [3.4.2 Grant Roles in the Target Folder](#342-grant-roles-in-the-target-folder)
+      - [3.4.3 Grant Roles in the Target Organization](#343-grant-roles-in-the-target-organization)
+    - [3.5 Download the Source Code](#35-download-the-source-code)
+    - [3.6 Download Service Account Key File](#36-download-service-account-key-file)
+    - [3.7 Configure Terraform](#37-configure-terraform)
+    - [3.8 Run Terraform](#38-run-terraform)
+    - [3.9 Testing](#39-testing)
+    - [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup)
+    - [3.11 Scheduled Reporting](#311-scheduled-reporting)
+    - [3.11 Alerting](#311-alerting)
+      - [3.11.1 Slack Configuration](#3111-slack-configuration)
+        - [3.11.1.1 Create Notification Channel](#31111-create-notification-channel)
+        - [3.11.1.2 Configuring Alerting Policy](#31112-configuring-alerting-policy)
+  - [4. Release Note](#4-release-note)
+    - [4.1 V4: Quota Monitoring across GCP services](#41-v4-quota-monitoring-across-gcp-services)
+      - [New](#new)
+      - [Known Limitations](#known-limitations)
+  - [5. What is Next](#5-what-is-next)
+  - [5. Contact Us](#5-contact-us)
 
 ### 3.1 Prerequisites
 
@@ -369,9 +385,9 @@ gcloud iam service-accounts keys create key.json \
     *   terraform.tfvars
 2.  Open terraform.tfvars file in your favourite editor and change values for
     the variable
-3.  Values for variable source_code_bucket_name, source_code_zip and
-    source_code_notification_zip are for source code zip in the storage bucket.
-    These are links to the Cloud Function source code. If you want to upgrade to
+3.  Values for variable source_code_base_url, qms_version, source_code_zip and
+    source_code_notification_zip are used to download the source for the QMS
+    Cloud Functions. If you want to upgrade to
     latest code changes everytime you run 'terraform apply', change to this code
     source repository. DO NOT CHANGE if you do not want to receive latest code
     changes while running 'terraform apply' everytime after deployment.

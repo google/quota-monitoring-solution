@@ -13,6 +13,13 @@ Copyright 2022 Google LLC
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+
+variable "qms_version" {
+  description = "Quota monitoring solution version to deploy"
+  type        = string
+  default     = "v4.4.0" #x-release-please-version
+}
+
 variable "project_id" {
   description = "Value of the Project Id to deploy the solution"
   type        = string
@@ -76,34 +83,22 @@ variable "scheduler_cron_job_deadline" {
   default     = "540s"
 }
 
-variable "source_code_bucket_name" {
-  description = "Value of cloud storage bucket to download source code for Cloud Function"
+variable "source_code_base_url" {
+  description = "Base URL to use when downloading source code for QMS Cloud Functions"
   type        = string
-  default     = "quota-monitoring-solution-source"
+  default     = "https://github.com/google/quota-monitoring-solution/releases/download/"
 }
 
 variable "source_code_zip" {
   description = "Value of List and Scan Project Quotas source code zip file"
   type        = string
-  default     = "v4.3/quota-monitoring-solution-v4.3.zip"
+  default     = "quota-monitoring-solution.zip"
 }
 
 variable "source_code_notification_zip" {
   description = "Value of Notification Quota Alerts source code zip file"
   type        = string
-  default     = "v4.3/quota-monitoring-notification-v4.3.zip"
-}
-
-variable "source_code_repo_url" {
-  description = "Value of List and Scan Project Quotas source code git url"
-  type        = string
-  default     = "https://github.com/google/quota-monitoring-solution/tree/main/quota-scan"
-}
-
-variable "source_code_notification_repo_url" {
-  description = "Value of Notification Quota Alerts source code git url"
-  type        = string
-  default     = "https://github.com/google/quota-monitoring-solution/tree/main/quota-notification"
+  default     = "quota-monitoring-notification.zip"
 }
 
 variable "cloud_function_list_project" {
