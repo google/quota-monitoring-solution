@@ -99,12 +99,12 @@ resource "null_resource" "source_code_zip" {
   }
 
   provisioner "local-exec" {
-    command = "curl -Lo ${source_code_zip} ${var.source_code_base_url}/${var.qms_version}/${source_code_zip}"
+    command = "curl -Lo ${var.source_code_zip} ${var.source_code_base_url}/${var.qms_version}/${var.source_code_zip}"
   }
 }
 
 resource "google_storage_bucket_object" "source_code_object" {
-  name   = "${qms_version}-${var.source_code_zip}"
+  name   = "${var.qms_version}-${var.source_code_zip}"
   bucket = google_storage_bucket.bucket_gcf_source.name
   source = var.source_code_zip
 }
@@ -185,12 +185,12 @@ resource "null_resource" "source_code_notification_zip" {
   }
 
   provisioner "local-exec" {
-    command = "curl -Lo ${source_code_notification_zip} ${var.source_code_base_url}/${var.qms_version}/${source_code_notification_zip}"
+    command = "curl -Lo ${var.source_code_notification_zip} ${var.source_code_base_url}/${var.qms_version}/${var.source_code_notification_zip}"
   }
 }
 
 resource "google_storage_bucket_object" "source_code_notification_object" {
-  name   = "${qms_version}-${var.source_code_notification_zip}"
+  name   = "${var.qms_version}-${var.source_code_notification_zip}"
   bucket = google_storage_bucket.bucket_gcf_source.name
   source = var.source_code_notification_zip
 }
