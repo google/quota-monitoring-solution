@@ -35,6 +35,7 @@ import functions.eventpojos.GCPProject;
 import functions.eventpojos.GCPResourceClient;
 import functions.eventpojos.ProjectQuota;
 import functions.eventpojos.TimeSeriesQuery;
+import functions.eventpojos.MetricFix;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -44,6 +45,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+const MetricFix[] metricFixList = new MetricFix[] {new MetricFix("storage.googleapis.com/google_egress_bandwidth", 60)};
 
 public class ScanProjectQuotasHelper {
   // Cloud Function Environment variable to identify usage and limit values
@@ -162,10 +165,31 @@ public class ScanProjectQuotasHelper {
     projectQuota.setTargetPoolName("NA");
     projectQuota.setRegion(ts.getResource().getLabelsMap().get("location"));
     projectQuota.setMetric(ts.getMetric().getLabelsMap().get("quota_metric"));
-    projectQuota.setMetricValue(entry.getValue().toString());
+
     if (isLimit) {
+      projectQuota.setMetricValue(entry.getValue().toString());
       projectQuota.setMetricValueType(METRIC_VALUE_LIMIT);
     } else {
+      String metricValueStr = entry.getValue().toString()
+      boolean flag = False
+      MetricFix metricFix;
+      
+      for (MetricFix dm: MetricFixList) {           
+        if projectQuota.getMetric() == dm.getMetric() {
+          flag = True
+          metricFix = dm
+          break;
+        } 
+      }
+
+      long metricValue = Long.parseLong(metricValueStr)
+      metricValue = metricValue/metricFix.fixer
+      if flag {
+        projectQuota.setMetricValue(metricValue.toString());
+      } else {
+        projectQuota.setMetricValue(entry.().toString());
+      }
+
       projectQuota.setMetricValueType(METRIC_VALUE_USAGE);
     }
     projectQuota.setVpcName("NA");
