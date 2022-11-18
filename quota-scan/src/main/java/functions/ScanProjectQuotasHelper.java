@@ -172,9 +172,7 @@ public class ScanProjectQuotasHelper {
       MetricFix metricFix = new MetricFix();
       
       for (MetricFix dm: metricFixList) {    
-        logger.log(Level.INFO, "metric name : " + projectQuota.getMetric() + " ::::: " + dm.getMetric()); 
         if (projectQuota.getMetric().equals(dm.getMetric())) {
-          logger.log(Level.INFO, "Matched Name !!!! : " + projectQuota.getMetric() + " ::::: " + dm.getMetric()); 
           flag = true;
           metricFix = dm;
           break;
@@ -182,11 +180,9 @@ public class ScanProjectQuotasHelper {
       }
 
       if (flag) {
-        String metricValueStr = entry.getValue().toString(); 
-        logger.log(Level.INFO, "Actual Value : " + metricValueStr); 
+        String metricValueStr = entry.getValue().toString();  
         long metricValue = Long.parseLong(metricValueStr);
         metricValue = metricValue/metricFix.getFixer();
-        logger.log(Level.INFO, "Fixed Value : " + metricValue); 
         projectQuota.setMetricValue(Long.toString(metricValue));
       } else {
         projectQuota.setMetricValue(entry.getValue().toString());
