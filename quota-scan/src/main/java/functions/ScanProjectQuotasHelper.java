@@ -46,13 +46,11 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-const MetricFix[] metricFixList = new MetricFix[] {new MetricFix("storage.googleapis.com/google_egress_bandwidth", 60)};
-
 public class ScanProjectQuotasHelper {
   // Cloud Function Environment variable to identify usage and limit values
   public static final String METRIC_VALUE_USAGE = "usage";
   public static final String METRIC_VALUE_LIMIT = "limit";
-
+  public static final MetricFix[] metricFixList = new MetricFix[] {new MetricFix("storage.googleapis.com/google_egress_bandwidth", 60)};
   private static final Logger logger = Logger.getLogger(ScanProjectQuotasHelper.class.getName());
 
   /*
@@ -170,24 +168,28 @@ public class ScanProjectQuotasHelper {
       projectQuota.setMetricValue(entry.getValue().toString());
       projectQuota.setMetricValueType(METRIC_VALUE_LIMIT);
     } else {
-      String metricValueStr = entry.getValue().toString()
-      boolean flag = False
-      MetricFix metricFix;
+      boolean flag = false;
+      MetricFix metricFix = new MetricFix();
       
-      for (MetricFix dm: MetricFixList) {           
-        if projectQuota.getMetric() == dm.getMetric() {
-          flag = True
-          metricFix = dm
+      for (MetricFix dm: metricFixList) {    
+        logger.log(Level.INFO, "metric name : " + projectQuota.getMetric() + " ::::: " + dm.getMetric()); 
+        if (projectQuota.getMetric().equals(dm.getMetric())) {
+          logger.log(Level.INFO, "Matched Name !!!! : " + projectQuota.getMetric() + " ::::: " + dm.getMetric()); 
+          flag = true;
+          metricFix = dm;
           break;
         } 
       }
 
-      long metricValue = Long.parseLong(metricValueStr)
-      metricValue = metricValue/metricFix.fixer
-      if flag {
-        projectQuota.setMetricValue(metricValue.toString());
+      if (flag) {
+        String metricValueStr = entry.getValue().toString(); 
+        logger.log(Level.INFO, "Actual Value : " + metricValueStr); 
+        long metricValue = Long.parseLong(metricValueStr);
+        metricValue = metricValue/metricFix.getFixer();
+        logger.log(Level.INFO, "Fixed Value : " + metricValue); 
+        projectQuota.setMetricValue(Long.toString(metricValue));
       } else {
-        projectQuota.setMetricValue(entry.().toString());
+        projectQuota.setMetricValue(entry.getValue().toString());
       }
 
       projectQuota.setMetricValueType(METRIC_VALUE_USAGE);

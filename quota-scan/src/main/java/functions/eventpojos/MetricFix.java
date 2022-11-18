@@ -26,7 +26,7 @@ public class MetricFix {
   }
 
   public long getFixer() {
-    return fixer;
+    return this.fixer;
   }
 
   public void setFixer(long fixer) {
@@ -36,5 +36,8 @@ public class MetricFix {
   public MetricFix(String metric, long fixer){  
     this.metric = metric;  
     this.fixer = fixer;  
-    }  
+  }
+
+  public MetricFix(){
+  }
 }
