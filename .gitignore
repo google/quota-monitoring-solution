@@ -1,5 +1,9 @@
 sendgrid.env
-/target
+quota-notification/target
+quota-scan/target
+key.json
+terraform.tfstate*
+terraform/example/*.zip
 .*
 !/.gitignore
 !/.github
