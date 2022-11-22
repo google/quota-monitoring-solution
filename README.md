@@ -60,6 +60,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 
 ### Content
 
+<!-- markdownlint-disable -->
 - [Quota Monitoring and Alerting](#quota-monitoring-and-alerting)
   - [1. Summary](#1-summary)
     - [1.1 Four Initial Features](#11-four-initial-features)
@@ -90,6 +91,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
       - [Known Limitations](#known-limitations)
   - [5. What is Next](#5-what-is-next)
   - [5. Contact Us](#5-contact-us)
+<!-- markdownlint-restore -->
 
 ### 3.1 Prerequisites
 

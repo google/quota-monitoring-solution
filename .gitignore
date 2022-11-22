@@ -4,7 +4,9 @@ quota-scan/target
 key.json
 terraform.tfstate*
 terraform/example/*.zip
+
 .*
 !/.gitignore
 !/.github
 !/.mdl*
+!/.markdownlint.json
