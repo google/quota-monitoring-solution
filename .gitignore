@@ -8,5 +8,4 @@ terraform/example/*.zip
 .*
 !/.gitignore
 !/.github
-!/.mdl*
 !/.markdownlint.json
