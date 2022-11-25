@@ -152,6 +152,7 @@ public class ScanProjectQuotasHelper {
    * */
   private static ProjectQuota populateProjectQuota(
       TimeSeries ts, String projectId, Boolean isLimit) {
+    
     Map.Entry<FieldDescriptor, Object> entry =
         ts.getPointsList().get(0).getValue().getAllFields().entrySet().iterator().next();
     ProjectQuota projectQuota = new ProjectQuota();
@@ -165,11 +166,14 @@ public class ScanProjectQuotasHelper {
     projectQuota.setMetric(ts.getMetric().getLabelsMap().get("quota_metric"));
 
     if (isLimit) {
+      logger.log(Level.INFO, "LIMIT Timeseries Entry Value ::: " + ts.getMetric().getLabelsMap().get("quota_metric") + " ::: " + ts.getResource().getLabelsMap().get("location")  + " ::: "+ ts.getPointsList().get(0).getValue() + " ::: " + entry.getValue() + " ::: " + entry.getValue().toString());
       projectQuota.setMetricValue(entry.getValue().toString());
       projectQuota.setMetricValueType(METRIC_VALUE_LIMIT);
     } else {
       boolean flag = false;
       MetricFix metricFix = new MetricFix();
+
+      logger.log(Level.INFO, "ACTUAL Timeseries Entry Value ::: " + ts.getMetric().getLabelsMap().get("quota_metric") + " ::: " + ts.getResource().getLabelsMap().get("location") + " ::: " + ts.getPointsList().get(0).getValue() + " ::: " + entry.getValue() + " ::: " + entry.getValue().toString());
       
       for (MetricFix dm: metricFixList) {    
         if (projectQuota.getMetric().equals(dm.getMetric())) {
