@@ -12,20 +12,21 @@ jobs:
         with:
           release-type: terraform-module
           package-name: ${{env.ACTION_NAME}}
+          token: ${{ secrets.RELEASE_PLEASE }}
           extra-files: |
             terraform/modules/qms/variables.tf
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
         if: ${{ steps.release.outputs.release_created }}
         with:
           fetch-depth: 0
-      - uses: thedoctor0/zip-release@main
+      - uses: thedoctor0/zip-release@0.6.2
         if: ${{ steps.release.outputs.release_created }}
         name: Create Zip for quota-scan
         with:
           type: 'zip'
           filename: 'quota-monitoring-solution.zip'
           directory: quota-scan
-      - uses: thedoctor0/zip-release@main
+      - uses: thedoctor0/zip-release@0.6.2
         if: ${{ steps.release.outputs.release_created }}
         name: Create Zip for quota-notification
         with:
@@ -40,4 +41,4 @@ jobs:
           artifacts: "quota-scan/quota-monitoring-solution.zip,quota-notification/quota-monitoring-notification.zip"
           omitBodyDuringUpdate: true
           tag: ${{ steps.release.outputs.tag_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE }}
