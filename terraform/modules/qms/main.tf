@@ -107,6 +107,10 @@ resource "google_storage_bucket_object" "source_code_object" {
   name   = "${var.qms_version}-${var.source_code_zip}"
   bucket = google_storage_bucket.bucket_gcf_source.name
   source = var.source_code_zip
+
+  depends_on = [
+    null_resource.source_code_zip
+  ]
 }
 
 # cloud function to list projects
@@ -193,6 +197,10 @@ resource "google_storage_bucket_object" "source_code_notification_object" {
   name   = "${var.qms_version}-${var.source_code_notification_zip}"
   bucket = google_storage_bucket.bucket_gcf_source.name
   source = var.source_code_notification_zip
+
+  depends_on = [
+    null_resource.source_code_notification_zip
+  ]
 }
 
 # Third cloud function to send notification
@@ -334,7 +342,7 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   location                  = var.big_query_dataset_location
   data_source_id            = "scheduled_query"
   schedule                  = var.Alert_data_scanning_frequency
-  notification_pubsub_topic = "projects/${var.project_id}/topics/${var.topic_alert_notification}"
+  notification_pubsub_topic = google_pubsub_topic.topic_alert_notification.id
   destination_dataset_id    = google_bigquery_dataset.quota_usage_alert_dataset.dataset_id
   depends_on                = [module.project-services]
   params = {
@@ -455,5 +463,8 @@ resource "google_monitoring_alert_policy" "alert_policy_quota" {
   notification_channels = [
     google_monitoring_notification_channel.email0.name
   ]
-  depends_on = [module.project-services]
+  depends_on = [
+    module.project-services,
+    google_logging_metric.quota_logging_metric
+  ]
 }
