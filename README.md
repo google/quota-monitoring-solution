@@ -60,6 +60,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 
 ### Content
 
+<!-- markdownlint-disable -->
 - [Quota Monitoring and Alerting](#quota-monitoring-and-alerting)
   - [1. Summary](#1-summary)
     - [1.1 Four Initial Features](#11-four-initial-features)
@@ -90,6 +91,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
       - [Known Limitations](#known-limitations)
   - [5. What is Next](#5-what-is-next)
   - [5. Contact Us](#5-contact-us)
+<!-- markdownlint-restore -->
 
 ### 3.1 Prerequisites
 
@@ -385,9 +387,9 @@ gcloud iam service-accounts keys create key.json \
     *   terraform.tfvars
 2.  Open terraform.tfvars file in your favourite editor and change values for
     the variable
-3.  Values for variable source_code_bucket_name, source_code_zip and
-    source_code_notification_zip are for source code zip in the storage bucket.
-    These are links to the Cloud Function source code. If you want to upgrade to
+3.  Values for variable source_code_base_url, qms_version, source_code_zip and
+    source_code_notification_zip are used to download the source for the QMS
+    Cloud Functions. If you want to upgrade to
     latest code changes everytime you run 'terraform apply', change to this code
     source repository. DO NOT CHANGE if you do not want to receive latest code
     changes while running 'terraform apply' everytime after deployment.
