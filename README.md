@@ -86,9 +86,11 @@ Functions, Pub/Sub, Dataflow and BigQuery.
         - [3.11.1.1 Create Notification Channel](#31111-create-notification-channel)
         - [3.11.1.2 Configuring Alerting Policy](#31112-configuring-alerting-policy)
   - [4. Release Note](#4-release-note)
-    - [4.1 V4: Quota Monitoring across GCP services](#41-v4-quota-monitoring-across-gcp-services)
+    - [v4.0.0: Quota Monitoring across GCP services](#v400-quota-monitoring-across-gcp-services)
       - [New](#new)
       - [Known Limitations](#known-limitations)
+    - [v4.4.0](#v440)
+      - [New in v4.4.0](#new-in-v440)
   - [5. What is Next](#5-what-is-next)
   - [5. Contact Us](#5-contact-us)
 <!-- markdownlint-restore -->
@@ -603,7 +605,7 @@ the specified threshold limit.
 
 ## 4. Release Note
 
-### 4.1 V4: Quota Monitoring across GCP services
+### v4.0.0: Quota Monitoring across GCP services
 
 #### New
 
@@ -619,6 +621,21 @@ the specified threshold limit.
     SQL query to build the dashboard uses current date to filter the records. If
     you change the frequency, make changes to the query to rightly reflect the
     latest data.
+
+### v4.4.0
+
+#### New in v4.4.0
+
+*   The new version includes a fix that converts the data pull process to use
+    the Montoring Query Language (MQL). This allows QMS to pull the limit and
+    current usage at the exact same time, so reporting queries can be more
+    tightly scoped, eliminating over reporting problems.
+
+    To upgrade existing installations:
+
+    *   Re-run the Terraform, to update the Cloud Functions and Scheduled Query
+    *   Update the SQL used in the Data Studio dashboard according to Step #7
+        of [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup).
 
 ## 5. What is Next
 
