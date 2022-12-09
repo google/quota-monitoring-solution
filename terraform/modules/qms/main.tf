@@ -86,6 +86,33 @@ resource "google_cloud_scheduler_job" "job" {
   }
 }
 
+resource "google_storage_bucket" "bucket_gcf_source" {
+  name          = "${var.project_id}-gcf-source"
+  storage_class = "REGIONAL"
+  location      = var.region
+  force_destroy = "true"
+}
+
+resource "null_resource" "source_code_zip" {
+  triggers = {
+    on_version_change = var.qms_version
+  }
+
+  provisioner "local-exec" {
+    command = "curl -Lo ${var.source_code_zip} ${var.source_code_base_url}/${var.qms_version}/${var.source_code_zip}"
+  }
+}
+
+resource "google_storage_bucket_object" "source_code_object" {
+  name   = "${var.qms_version}-${var.source_code_zip}"
+  bucket = google_storage_bucket.bucket_gcf_source.name
+  source = var.source_code_zip
+
+  depends_on = [
+    null_resource.source_code_zip
+  ]
+}
+
 # cloud function to list projects
 resource "google_cloudfunctions_function" "function-listProjects" {
   name        = var.cloud_function_list_project
@@ -93,8 +120,8 @@ resource "google_cloudfunctions_function" "function-listProjects" {
   runtime     = "java11"
 
   available_memory_mb   = var.cloud_function_list_project_memory
-  source_archive_bucket = var.source_code_bucket_name
-  source_archive_object = var.source_code_zip
+  source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
+  source_archive_object = google_storage_bucket_object.source_code_object.name
   trigger_http          = true
   entry_point           = "functions.ListProjects"
   service_account_email = var.service_account_email
@@ -125,8 +152,8 @@ resource "google_cloudfunctions_function" "function-scanProject" {
   runtime     = "java11"
 
   available_memory_mb   = var.cloud_function_scan_project_memory
-  source_archive_bucket = var.source_code_bucket_name
-  source_archive_object = var.source_code_zip
+  source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
+  source_archive_object = google_storage_bucket_object.source_code_object.name
   entry_point           = "functions.ScanProjectQuotas"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_scan_project_timeout
@@ -156,6 +183,26 @@ resource "google_cloudfunctions_function_iam_member" "invoker-scanProject" {
   member = "serviceAccount:${var.service_account_email}"
 }
 
+resource "null_resource" "source_code_notification_zip" {
+  triggers = {
+    on_version_change = var.qms_version
+  }
+
+  provisioner "local-exec" {
+    command = "curl -Lo ${var.source_code_notification_zip} ${var.source_code_base_url}/${var.qms_version}/${var.source_code_notification_zip}"
+  }
+}
+
+resource "google_storage_bucket_object" "source_code_notification_object" {
+  name   = "${var.qms_version}-${var.source_code_notification_zip}"
+  bucket = google_storage_bucket.bucket_gcf_source.name
+  source = var.source_code_notification_zip
+
+  depends_on = [
+    null_resource.source_code_notification_zip
+  ]
+}
+
 # Third cloud function to send notification
 resource "google_cloudfunctions_function" "function-notificationProject" {
   name        = var.cloud_function_notification_project
@@ -163,8 +210,8 @@ resource "google_cloudfunctions_function" "function-notificationProject" {
   runtime     = "java11"
 
   available_memory_mb   = var.cloud_function_notification_project_memory
-  source_archive_bucket = var.source_code_bucket_name
-  source_archive_object = var.source_code_notification_zip
+  source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
+  source_archive_object = google_storage_bucket_object.source_code_notification_object.name
   entry_point           = "functions.SendNotification"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_notification_project_timeout
@@ -295,7 +342,7 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   location                  = var.big_query_dataset_location
   data_source_id            = "scheduled_query"
   schedule                  = var.Alert_data_scanning_frequency
-  notification_pubsub_topic = "projects/${var.project_id}/topics/${var.topic_alert_notification}"
+  notification_pubsub_topic = google_pubsub_topic.topic_alert_notification.id
   destination_dataset_id    = google_bigquery_dataset.quota_usage_alert_dataset.dataset_id
   depends_on                = [module.project-services]
   params = {
@@ -433,5 +480,9 @@ resource "google_monitoring_alert_policy" "alert_policy_quota" {
     [ for p in google_monitoring_notification_channel.pubsubs : p.name ],
     [ for e in google_monitoring_notification_channel.emails  : e.name ],
   ])
-  depends_on = [module.project-services]
+
+  depends_on = [
+    module.project-services,
+    google_logging_metric.quota_logging_metric
+  ]
 }
