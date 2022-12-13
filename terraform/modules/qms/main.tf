@@ -266,70 +266,58 @@ resource "google_bigquery_table" "default" {
   schema = <<EOF
 [
   {
-    "name": "threshold",
-    "type": "INT64",
+    "name": "project_id",
+    "type": "STRING",
     "mode": "NULLABLE",
-    "description": "region"
+    "description": "Project Id the quota metric applies to"
+  },
+  {
+    "name": "added_at",
+    "type": "TIMESTAMP",
+    "mode": "NULLABLE",
+    "description": "Time at which the quota data was retrieved"
   },
   {
     "name": "region",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "region"
+    "description": "Region the quota metric applies to"
   },
   {
-    "name": "m_value",
+    "name": "quota_metric",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "Quota metric value - usage or limit"
+    "description": "Quota metric"
   },
   {
-    "name": "mv_type",
+    "name": "limit_name",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "Type of metric value - usage or limit"
+    "description": "Name of the limit"
   },
   {
-    "name": "vpc_name",
-    "type": "STRING",
+    "name": "current_usage",
+    "type": "INT64",
     "mode": "NULLABLE",
-    "description": "vpc name"
+    "description": "Current usage against the quota"
   },
   {
-    "name": "metric",
-    "type": "STRING",
+    "name": "max_usage",
+    "type": "INT64",
     "mode": "NULLABLE",
-    "description": "quota metric"
+    "description": "Maximum usage against the quota in the query window"
   },
   {
-    "name": "addedAt",
-    "type": "TIMESTAMP",
+    "name": "quota_limit",
+    "type": "INT64",
     "mode": "NULLABLE",
-    "description": "timestamp"
+    "description": "Quota limit for the metric"
   },
   {
-    "name": "project_id",
-    "type": "STRING",
+    "name": "threshold",
+    "type": "INT64",
     "mode": "NULLABLE",
-    "description": "project id"
-  },
-  {
-    "name": "folder_id",
-    "type": "STRING",
-    "mode": "NULLABLE",
-    "description": "folder id"
-  },
-  {
-    "name": "targetpool_name",
-    "type": "STRING",
-    "mode": "NULLABLE",
-    "description": "target pool name"
-  },
-  {
-    "name": "org_id",
-    "type": "STRING",
-    "mode": "NULLABLE",
-    "description": "organization id of the project"
+    "description": "Alerting threshold for the quota metric"
   }
 ]
 EOF
@@ -348,7 +336,7 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   params = {
     destination_table_name_template = var.big_query_alert_table_id
     write_disposition               = "WRITE_TRUNCATE"
-    query                           = "SELECT metric,usage,q_limit,consumption,project_id,region,HOUR AS addedAt FROM (SELECT project_id,region,metric,HOUR,q_limit,usage,ROUND((SAFE_DIVIDE(CAST(t.usage AS BIGNUMERIC),CAST(t.q_limit AS BIGNUMERIC))*100),2) AS consumption,threshold FROM (SELECT project_id,region,metric,DATE_TRUNC(addedAt, HOUR) AS HOUR,MAX(CASE WHEN mv_type='limit' THEN m_value ELSE NULL END) AS q_limit,MAX(CASE WHEN mv_type='usage' THEN m_value ELSE NULL END) AS usage,threshold FROM ${var.project_id}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.default.table_id} GROUP BY 1,2,3,4,7 ) t ) c WHERE c.consumption >= c.threshold"
+    query                           = "SELECT quota_metric, current_usage, max_usage, quota_limit, current_consumption, max_consumption, project_id, region, added_at FROM ( SELECT project_id, region, metric, added_at, quota_limit, current_usage, max_usage, ROUND( ( SAFE_DIVIDE( CAST(current_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS current_consumption, ROUND( ( SAFE_DIVIDE( CAST(max_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS max_consumption, threshold FROM $ { var.project_id }.$ { google_bigquery_dataset.dataset.dataset_id }.$ { google_bigquery_table.default.table_id } ) c WHERE c.current_consumption >= c.threshold OR c.max_consumption >= c.threshold"
   }
 }
 
