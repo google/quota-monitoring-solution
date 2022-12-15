@@ -348,7 +348,7 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   params = {
     destination_table_name_template = var.big_query_alert_table_id
     write_disposition               = "WRITE_TRUNCATE"
-    query                           = "SELECT metric,usage,q_limit,consumption,project_id,region,HOUR AS addedAt FROM (SELECT project_id,region,metric,HOUR,q_limit,usage,ROUND((SAFE_DIVIDE(CAST(t.usage AS BIGNUMERIC),CAST(t.q_limit AS BIGNUMERIC))*100),2) AS consumption,threshold FROM (SELECT project_id,region,metric,DATE_TRUNC(addedAt, HOUR) AS HOUR,MAX(CASE WHEN mv_type='limit' THEN m_value ELSE NULL END) AS q_limit,MAX(CASE WHEN mv_type='usage' THEN m_value ELSE NULL END) AS usage,threshold FROM ${var.project_id}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.default.table_id} GROUP BY 1,2,3,4,7 ) t ) c WHERE c.consumption >= c.threshold"
+    query                           = "SELECT metric,usage,q_limit,consumption,project_id,region,addedAt FROM (SELECT project_id,region,metric,addedAt,q_limit,usage,ROUND((SAFE_DIVIDE(CAST(t.usage AS BIGNUMERIC),CAST(t.q_limit AS BIGNUMERIC))*100),2) AS consumption,threshold FROM (SELECT project_id,region,metric,addedAt,MAX(CASE WHEN mv_type='limit' THEN m_value ELSE NULL END) AS q_limit,MAX(CASE WHEN mv_type='usage' THEN m_value ELSE NULL END) AS usage,threshold FROM ${var.project_id}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.default.table_id} GROUP BY 1,2,3,4,7 ) t ) c WHERE c.consumption >= c.threshold"
   }
 }
 

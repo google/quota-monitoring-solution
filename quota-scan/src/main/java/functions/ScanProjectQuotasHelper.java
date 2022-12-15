@@ -14,8 +14,8 @@ Copyright 2022 Google LLC
 package functions;
 
 import static functions.ScanProjectQuotas.THRESHOLD;
-import static functions.ScanProjectQuotas.TIME_INTERVAL_START;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.BigQueryException;
@@ -23,34 +23,78 @@ import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.InsertAllRequest;
 import com.google.cloud.bigquery.InsertAllResponse;
 import com.google.cloud.bigquery.TableId;
-import com.google.cloud.monitoring.v3.MetricServiceClient;
-import com.google.cloud.monitoring.v3.MetricServiceClient.ListTimeSeriesPagedResponse;
-import com.google.monitoring.v3.ListTimeSeriesRequest;
-import com.google.monitoring.v3.TimeInterval;
-import com.google.monitoring.v3.TimeSeries;
-import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.util.Timestamps;
-
+import com.google.cloud.monitoring.v3.QueryServiceClient.QueryTimeSeriesPagedResponse;
+import com.google.cloud.monitoring.v3.QueryServiceClient;
+import com.google.monitoring.v3.QueryTimeSeriesRequest;
+import com.google.monitoring.v3.TimeSeriesData;
 import functions.eventpojos.GCPProject;
 import functions.eventpojos.GCPResourceClient;
 import functions.eventpojos.ProjectQuota;
-import functions.eventpojos.TimeSeriesQuery;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ScanProjectQuotasHelper {
-  // Cloud Function Environment variable to identify usage and limit values
+  private static final Logger logger = Logger.getLogger(ScanProjectQuotasHelper.class.getName());
+
+  public static final String MQL_ALLOCATION_ALL = "fetch consumer_quota" +
+    "| filter resource.service =~ '.*'" +
+    "| { usage:" +
+    "     metric 'serviceruntime.googleapis.com/quota/allocation/usage'" +
+    "     | filter resource.project_id = '%1$s'" +
+    "     | align next_older(1d)" +
+    "     | group_by" +
+    "         [resource.service, resource.project_id, resource.location," +
+    "         metric.quota_metric]," +
+    "         [value_usage_aggregate: aggregate(value.usage)," +
+    "         value_usage_max: max(value.usage), value_usage_min: min(value.usage)]" +
+    " ; limit:" +
+    "     metric 'serviceruntime.googleapis.com/quota/limit'" +
+    "     | filter resource.project_id = '%1$s'" +
+    "     | align next_older(1d)" +
+    "     | group_by" +
+    "         [resource.service, resource.project_id, resource.location," +
+    "         metric.quota_metric, metric.limit_name]," +
+    "         [value_limit_aggregate: aggregate(value.limit)] }" +
+    "| join" +
+    "| value" +
+    "   [limit: limit.value_limit_aggregate, usage: usage.value_usage_aggregate," +
+    "   usage.value_usage_max, usage.value_usage_min]";
+    public static final String MQL_RATE_ALL = "fetch consumer_quota" +
+    "| filter resource.service =~ '.*'" +
+    "| { usage:" +
+    "     metric 'serviceruntime.googleapis.com/quota/rate/net_usage'" +
+    "     | filter resource.project_id = '%1$s'" +
+    "     | align next_older(1d)" +
+    "     | group_by" +
+    "         [resource.service, resource.project_id, resource.location," +
+    "         metric.quota_metric]," +
+    "         [value_usage_aggregate: aggregate(value.net_usage)," +
+    "         value_usage_max: max(value.net_usage), value_usage_min: min(value.net_usage)]" +
+    " ; limit:" +
+    "     metric 'serviceruntime.googleapis.com/quota/limit'" +
+    "     | filter resource.project_id = '%1$s'" +
+    "     | align next_older(1d)" +
+    "     | group_by" +
+    "         [resource.service, resource.project_id, resource.location," +
+    "         metric.quota_metric, metric.limit_name]," +
+    "         [value_limit_aggregate: aggregate(value.limit)] }" +
+    "| join" +
+    "| value" +
+    "   [limit: limit.value_limit_aggregate, usage: usage.value_usage_aggregate," +
+    "   usage.value_usage_max, usage.value_usage_min]";
+  
   public static final String METRIC_VALUE_USAGE = "usage";
   public static final String METRIC_VALUE_LIMIT = "limit";
 
-  private static final Logger logger = Logger.getLogger(ScanProjectQuotasHelper.class.getName());
+  enum Quotas {
+    ALLOCATION,
+    RATE
+  }
 
   /*
    * API to create GCP Resource Client for BigQuery Tables
@@ -68,70 +112,73 @@ public class ScanProjectQuotasHelper {
     return gcpResourceClient;
   }
 
-  /*
-   * API to load Time Series Filters from the properties file
-   * */
-  static TimeSeriesQuery getTimeSeriesFilter() {
-    TimeSeriesQuery timeSeriesQuery = new TimeSeriesQuery();
-    try {
-      InputStream input = ScanProjectQuotasHelper.class.getResourceAsStream("/config.properties");
-      Properties prop = new Properties();
-      // load a properties file
-      prop.load(input);
-      // get the property value and print it out
-      timeSeriesQuery.setAllocationQuotaUsageFilter(
-          prop.getProperty("allocation.quota.usage.filter"));
-      timeSeriesQuery.setRateQuotaUsageFilter(prop.getProperty("rate.quota.usage.filter"));
-      timeSeriesQuery.setQuotaLimitFilter(prop.getProperty("quota.limit.filter"));
-    } catch (IOException e) {
-      logger.log(Level.SEVERE, "Error reading properties file" + e.getMessage(), e);
-    }
-    return timeSeriesQuery;
-  }
-
-  /*
-   * API to get Quota from Time Series APIs with filters
-   * */
-  static List<ProjectQuota> getQuota(GCPProject gcpProject, String filter, Boolean isLimit) {
+  public static List<ProjectQuota> getQuota(GCPProject gcpProject, Quotas quota) {
     List<ProjectQuota> projectQuotas = new ArrayList<>();
 
-    try (MetricServiceClient metricServiceClient = MetricServiceClient.create()) {
-      TimeInterval interval = getTimeInterval();
-      // Prepares the list time series request with headers
-      ListTimeSeriesRequest request =
-          ListTimeSeriesRequest.newBuilder()
+    try (QueryServiceClient queryServiceClient = QueryServiceClient.create()) {
+      QueryTimeSeriesRequest request =
+          QueryTimeSeriesRequest.newBuilder()
               .setName(gcpProject.getProjectName())
-              .setFilter(filter)
-              .setInterval(interval)
+              .setQuery(String.format(getMql(quota), gcpProject.getProjectId()))
               .build();
 
-      // Send the request to list the time series
-      ListTimeSeriesPagedResponse response = metricServiceClient.listTimeSeries(request);
-      for (TimeSeries ts : response.iterateAll()) {
-        projectQuotas.add(populateProjectQuota(ts, gcpProject.getProjectId(), isLimit));
+      Timestamp ts = Timestamp.now();
+      QueryTimeSeriesPagedResponse response = queryServiceClient.queryTimeSeries(request);
+      for (TimeSeriesData data : response.iterateAll()) {
+        projectQuotas.add(populateProjectQuota(data, ts, METRIC_VALUE_LIMIT));
+        projectQuotas.add(populateProjectQuota(data, ts, METRIC_VALUE_USAGE));
       }
-
     } catch (IOException e) {
       logger.log(
           Level.SEVERE,
-          "Error fetching timeseries data for project: " + gcpProject.getProjectName() + e.getMessage(),
+          "Error fetching timeseries data for project: "
+              + gcpProject.getProjectName()
+              + e.getMessage(),
           e);
     }
 
     return projectQuotas;
   }
 
-  /*
-   * API to build time interval for Time Series query
-   * */
-  private static TimeInterval getTimeInterval() {
-    long startMillis = System.currentTimeMillis() - TIME_INTERVAL_START;
-    TimeInterval interval =
-        TimeInterval.newBuilder()
-            .setStartTime(Timestamps.fromMillis(startMillis))
-            .setEndTime(Timestamps.fromMillis(System.currentTimeMillis()))
-            .build();
-    return interval;
+  private static ProjectQuota populateProjectQuota(
+      TimeSeriesData data, Timestamp ts, String metricType) {
+    ProjectQuota projectQuota = new ProjectQuota();
+
+    projectQuota.setThreshold(Integer.valueOf(THRESHOLD));
+    projectQuota.setProjectId(data.getLabelValues(1).getStringValue());
+    projectQuota.setTimestamp(ts.toString());
+    projectQuota.setRegion(data.getLabelValues(2).getStringValue());
+    projectQuota.setMetric(data.getLabelValues(3).getStringValue());
+    projectQuota.setMetricValueType(metricType);
+    if(metricType == METRIC_VALUE_LIMIT) {
+      projectQuota.setMetricValue(String.valueOf(data.getPointData(0).getValues(0).getInt64Value()));
+    }
+    else {
+      projectQuota.setMetricValue(String.valueOf(data.getPointData(0).getValues(1).getInt64Value()));
+    }
+
+    projectQuota.setOrgId("orgId");
+    projectQuota.setFolderId("NA");
+    projectQuota.setTargetPoolName("NA");
+    projectQuota.setVpcName("NA");
+    return projectQuota;
+  }
+
+  private static String getMql(Quotas q) {
+    String mql;
+
+    switch (q) {
+      case ALLOCATION:
+        mql = MQL_ALLOCATION_ALL;
+        break;
+      case RATE:
+        mql = MQL_RATE_ALL;
+        break;
+      default:
+        mql = "";
+    }
+
+    return mql;
   }
 
   /*
@@ -144,32 +191,6 @@ public class ScanProjectQuotasHelper {
       Map<String, Object> row = createBQRow(pq);
       tableInsertRows(gcpResourceClient, row);
     }
-  }
-
-  /*
-   * API to populate Project Quota object from Time Series API response
-   * */
-  private static ProjectQuota populateProjectQuota(
-      TimeSeries ts, String projectId, Boolean isLimit) {
-    Map.Entry<FieldDescriptor, Object> entry =
-        ts.getPointsList().get(0).getValue().getAllFields().entrySet().iterator().next();
-    ProjectQuota projectQuota = new ProjectQuota();
-    projectQuota.setThreshold(Integer.valueOf(THRESHOLD));
-    projectQuota.setOrgId("orgId");
-    projectQuota.setProjectId(projectId);
-    projectQuota.setTimestamp("AUTO");
-    projectQuota.setFolderId("NA");
-    projectQuota.setTargetPoolName("NA");
-    projectQuota.setRegion(ts.getResource().getLabelsMap().get("location"));
-    projectQuota.setMetric(ts.getMetric().getLabelsMap().get("quota_metric"));
-    projectQuota.setMetricValue(entry.getValue().toString());
-    if (isLimit) {
-      projectQuota.setMetricValueType(METRIC_VALUE_LIMIT);
-    } else {
-      projectQuota.setMetricValueType(METRIC_VALUE_USAGE);
-    }
-    projectQuota.setVpcName("NA");
-    return projectQuota;
   }
 
   /*
