@@ -46,7 +46,7 @@ public class ScanProjectQuotasHelper {
     "| { usage:" +
     "     metric 'serviceruntime.googleapis.com/quota/allocation/usage'" +
     "     | filter resource.project_id = '%1$s'" +
-    "     | align next_older(1d)" +
+    "     | align next_older(7d)" +
     "     | group_by" +
     "         [resource.service, resource.project_id, resource.location," +
     "         metric.quota_metric]," +
@@ -55,7 +55,7 @@ public class ScanProjectQuotasHelper {
     " ; limit:" +
     "     metric 'serviceruntime.googleapis.com/quota/limit'" +
     "     | filter resource.project_id = '%1$s'" +
-    "     | align next_older(1d)" +
+    "     | align next_older(7d)" +
     "     | group_by" +
     "         [resource.service, resource.project_id, resource.location," +
     "         metric.quota_metric, metric.limit_name]," +
@@ -69,7 +69,7 @@ public class ScanProjectQuotasHelper {
     "| { usage:" +
     "     metric 'serviceruntime.googleapis.com/quota/rate/net_usage'" +
     "     | filter resource.project_id = '%1$s'" +
-    "     | align next_older(1d)" +
+    "     | align next_older(7d)" +
     "     | group_by" +
     "         [resource.service, resource.project_id, resource.location," +
     "         metric.quota_metric]," +
@@ -78,7 +78,7 @@ public class ScanProjectQuotasHelper {
     " ; limit:" +
     "     metric 'serviceruntime.googleapis.com/quota/limit'" +
     "     | filter resource.project_id = '%1$s'" +
-    "     | align next_older(1d)" +
+    "     | align next_older(7d)" +
     "     | group_by" +
     "         [resource.service, resource.project_id, resource.location," +
     "         metric.quota_metric, metric.limit_name]," +
@@ -88,9 +88,6 @@ public class ScanProjectQuotasHelper {
     "   [limit: limit.value_limit_aggregate, usage: usage.value_usage_aggregate," +
     "   usage.value_usage_max, usage.value_usage_min]";
   
-  public static final String METRIC_VALUE_USAGE = "usage";
-  public static final String METRIC_VALUE_LIMIT = "limit";
-
   enum Quotas {
     ALLOCATION,
     RATE
@@ -125,8 +122,7 @@ public class ScanProjectQuotasHelper {
       Timestamp ts = Timestamp.now();
       QueryTimeSeriesPagedResponse response = queryServiceClient.queryTimeSeries(request);
       for (TimeSeriesData data : response.iterateAll()) {
-        projectQuotas.add(populateProjectQuota(data, ts, METRIC_VALUE_LIMIT));
-        projectQuotas.add(populateProjectQuota(data, ts, METRIC_VALUE_USAGE));
+        projectQuotas.add(populateProjectQuota(data, ts));
       }
     } catch (IOException e) {
       logger.log(
@@ -141,26 +137,19 @@ public class ScanProjectQuotasHelper {
   }
 
   private static ProjectQuota populateProjectQuota(
-      TimeSeriesData data, Timestamp ts, String metricType) {
+      TimeSeriesData data, Timestamp ts) {
     ProjectQuota projectQuota = new ProjectQuota();
 
-    projectQuota.setThreshold(Integer.valueOf(THRESHOLD));
     projectQuota.setProjectId(data.getLabelValues(1).getStringValue());
     projectQuota.setTimestamp(ts.toString());
     projectQuota.setRegion(data.getLabelValues(2).getStringValue());
     projectQuota.setMetric(data.getLabelValues(3).getStringValue());
-    projectQuota.setMetricValueType(metricType);
-    if(metricType == METRIC_VALUE_LIMIT) {
-      projectQuota.setMetricValue(String.valueOf(data.getPointData(0).getValues(0).getInt64Value()));
-    }
-    else {
-      projectQuota.setMetricValue(String.valueOf(data.getPointData(0).getValues(1).getInt64Value()));
-    }
+    projectQuota.setLimitName(data.getLabelValues(4).getStringValue());
+    projectQuota.setCurrentUsage(data.getPointData(0).getValues(1).getInt64Value());
+    projectQuota.setMaxUsage(data.getPointData(0).getValues(2).getInt64Value());
+    projectQuota.setQuotaLimit(data.getPointData(0).getValues(0).getInt64Value());
+    projectQuota.setThreshold(Integer.valueOf(THRESHOLD));
 
-    projectQuota.setOrgId("orgId");
-    projectQuota.setFolderId("NA");
-    projectQuota.setTargetPoolName("NA");
-    projectQuota.setVpcName("NA");
     return projectQuota;
   }
 
@@ -198,17 +187,17 @@ public class ScanProjectQuotasHelper {
    * */
   public static Map<String, Object> createBQRow(ProjectQuota projectQuota) {
     Map<String, Object> rowContent = new HashMap<>();
-    rowContent.put("threshold", projectQuota.getThreshold());
-    rowContent.put("region", projectQuota.getRegion());
-    rowContent.put("m_value", projectQuota.getMetricValue());
-    rowContent.put("mv_type", projectQuota.getMetricValueType());
-    rowContent.put("vpc_name", projectQuota.getVpcName());
-    rowContent.put("metric", projectQuota.getMetric());
-    rowContent.put("addedAt", projectQuota.getTimestamp());
+
     rowContent.put("project_id", projectQuota.getProjectId());
-    rowContent.put("folder_id", projectQuota.getFolderId());
-    rowContent.put("targetpool_name", projectQuota.getTargetPoolName());
-    rowContent.put("org_id", projectQuota.getOrgId());
+    rowContent.put("added_at", projectQuota.getTimestamp());
+    rowContent.put("region", projectQuota.getRegion());
+    rowContent.put("metric", projectQuota.getMetric());
+    rowContent.put("limit_name", projectQuota.getLimitName());
+    rowContent.put("current_usage", projectQuota.getCurrentUsage());
+    rowContent.put("max_usage", projectQuota.getMaxUsage());
+    rowContent.put("quota_limit", projectQuota.getQuotaLimit());
+    rowContent.put("threshold", projectQuota.getThreshold());
+    
     return rowContent;
   }
 

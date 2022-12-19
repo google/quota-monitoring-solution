@@ -20,65 +20,22 @@ package functions.eventpojos;
  * POJO for ProjectQuota
  * */
 public class ProjectQuota {
-  private Integer threshold;
-  private String region;
-  private String metricValue;
-  private String metricValueType;
-  private String vpcName;
-  private String metric;
-  private String timestamp;
   private String projectId;
-  private String folderId;
-  private String value;
-  private String targetPoolName;
-  private String orgId;
+  private String timestamp;
+  private String region;
+  private String metric;
+  private String limitName;
+  private Long currentUsage;
+  private Long maxUsage;
+  private Long quotaLimit;
+  private Integer threshold;
 
-  public Integer getThreshold() {
-    return threshold;
+  public String getProjectId() {
+    return projectId;
   }
 
-  public void setThreshold(Integer threshold) {
-    this.threshold = threshold;
-  }
-
-  public String getRegion() {
-    return region;
-  }
-
-  public void setRegion(String region) {
-    this.region = region;
-  }
-
-  public String getMetricValue() {
-    return metricValue;
-  }
-
-  public void setMetricValue(String metricValue) {
-    this.metricValue = metricValue;
-  }
-
-  public String getMetricValueType() {
-    return metricValueType;
-  }
-
-  public void setMetricValueType(String metricValueType) {
-    this.metricValueType = metricValueType;
-  }
-
-  public String getVpcName() {
-    return vpcName;
-  }
-
-  public void setVpcName(String vpcName) {
-    this.vpcName = vpcName;
-  }
-
-  public String getMetric() {
-    return metric;
-  }
-
-  public void setMetric(String metric) {
-    this.metric = metric;
+  public void setProjectId(String projectId) {
+    this.projectId = projectId;
   }
 
   public String getTimestamp() {
@@ -89,43 +46,59 @@ public class ProjectQuota {
     this.timestamp = timestamp;
   }
 
-  public String getProjectId() {
-    return projectId;
+  public String getRegion() {
+    return region;
   }
 
-  public void setProjectId(String projectId) {
-    this.projectId = projectId;
+  public void setRegion(String region) {
+    this.region = region;
   }
 
-  public String getFolderId() {
-    return folderId;
+  public String getMetric() {
+    return metric;
   }
 
-  public void setFolderId(String folderId) {
-    this.folderId = folderId;
+  public void setMetric(String metric) {
+    this.metric = metric;
   }
 
-  public String getValue() {
-    return value;
+  public String getLimitName() {
+    return limitName;
   }
 
-  public void setValue(String value) {
-    this.value = value;
+  public void setLimitName(String limitName) {
+    this.limitName = limitName;
+  }
+  
+  public Long getCurrentUsage() {
+    return currentUsage;
   }
 
-  public String getTargetPoolName() {
-    return targetPoolName;
+  public void setCurrentUsage(Long currentUsage) {
+    this.currentUsage = currentUsage;
+  }
+  
+  public Long getMaxUsage() {
+    return maxUsage;
   }
 
-  public void setTargetPoolName(String targetPoolName) {
-    this.targetPoolName = targetPoolName;
+  public void setMaxUsage(Long maxUsage) {
+    this.maxUsage = maxUsage;
+  }
+  
+  public Long getQuotaLimit() {
+    return quotaLimit;
   }
 
-  public String getOrgId() {
-    return orgId;
+  public void setQuotaLimit(Long quotaLimit) {
+    this.quotaLimit = quotaLimit;
+  }
+  
+  public Integer getThreshold() {
+    return threshold;
   }
 
-  public void setOrgId(String orgId) {
-    this.orgId = orgId;
+  public void setThreshold(Integer threshold) {
+    this.threshold = threshold;
   }
 }
