@@ -32,7 +32,7 @@ import com.google.cloud.logging.Logging;
 import com.google.cloud.logging.LoggingOptions;
 import com.google.cloud.logging.Payload.StringPayload;
 import com.google.cloud.logging.Severity;
-import com.google.cloud.logging.Synchronicity;
+import functions.eventpojos.Alert;
 import functions.eventpojos.PubSubMessage;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,20 +57,23 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
   public void accept(PubSubMessage message, Context context) {
     // logger.info(String.format(message.getEmailIds()));
     logger.info("Successfully made it to sendNotification");
-    List<String> alerts = browseAlertTable();
+    List<Alert> alerts = browseAlertTable();
     logger.info("Successfully got data from alert table");
-    sendAlert(alerts);
+    String alertMessage = buildAlertMessage(alerts);
+    //sendAlert(alerts);
+    logger.info(alertMessage);
     return;
   }
 
-  private static List<String> browseAlertTable() {
-    List<String> alerts = new ArrayList();
+  private static List<Alert> browseAlertTable() {
+    List<Alert> alerts = new ArrayList();
+    Alert alert = new Alert();
     try {
       // Initialize client that will be used to send requests
       BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
       QueryJobConfiguration queryConfig =
           QueryJobConfiguration.newBuilder(
-                  "SELECT metric, usage, consumption "
+                  "SELECT project_id, region, metric, usage,q_limit, consumption "
                       + "FROM `"
                       + HOME_PROJECT
                       + "."
@@ -101,16 +104,21 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
       // Get all pages of the results.
       for (FieldValueList row : result.iterateAll()) {
         // Get all values
-        String metric = row.get("metric").getStringValue();
-        String usage = row.get("usage").getStringValue();
-        Float consumption = row.get("consumption").getNumericValue().floatValue();
-        alerts.add(
+        alert = new Alert();
+        alert.setProjectId(row.get("project_id").getStringValue());
+        alert.setRegion(row.get("region").getStringValue());
+        alert.setMetric(row.get("metric").getStringValue());
+        alert.setLimit(row.get("q_limit").getStringValue());
+        alert.setUsage(row.get("usage").getStringValue());
+        alert.setConsumption(row.get("consumption").getNumericValue().floatValue());
+
+        alerts.add(alert);
+        /*alerts.add(
             String.format(
                 "Metric name: %s usage: %s consumption: %.2f%s", metric, usage, consumption, "%"));
         logger.info(
-            "Alert : Metric " + metric + ": Usage " + usage + ": Consumption " + consumption + "%");
+            "Alert : Metric " + metric + ": Usage " + usage + ": Consumption " + consumption + "%");*/
       }
-
       logger.info("Query ran successfully ");
     } catch (BigQueryException | InterruptedException e) {
       logger.severe("Query failed to run \n" + e.toString());
@@ -119,25 +127,20 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
   }
 
   /*
-   * Logging API used to construct and send custom log containing quota data
-   * The logName triggers the alert policy
+   * API to build Alert Message for list of Quota metrics
    * */
-  private static void sendAlert(List<String> alerts) {
-    String logName = "quota-alerts";
-    String alertsStr = String.join("<br>", alerts);
-    String text = alertsStr;
-    logger.info(text);
-    LoggingOptions logging = LoggingOptions.getDefaultInstance();
-    Logging log_client = logging.getService();
-    // Configure logger to write entries synchronously
-    log_client.setWriteSynchronicity(Synchronicity.SYNC);
-    LogEntry entry =
-        LogEntry.newBuilder(StringPayload.of(text))
-            .setSeverity(Severity.INFO)
-            .setLogName(logName)
-            .setResource(MonitoredResource.newBuilder("global").build())
-            .build();
-
-    log_client.write(Collections.singleton(entry));
+  private static String buildAlertMessage(List<Alert> alerts){
+    StringBuilder htmlBuilder = new StringBuilder();
+    htmlBuilder.append("Quota metric usage alert details\n\n");
+    htmlBuilder.append("## "+alerts.size()+" quota metric usages above threshold\n\n");
+    htmlBuilder.append("|ProjectId | Scope | Metric  | Consumption(%) |\n");
+    htmlBuilder.append("|:---------|:------|:--------|:---------------|\n");
+    for(Alert alert : alerts){
+      htmlBuilder.append(alert.toString());
+      //htmlBuilder.append("<br>");
+      htmlBuilder.append("|\n");
+    }
+    String html = htmlBuilder.toString();
+    return html;
   }
 }
