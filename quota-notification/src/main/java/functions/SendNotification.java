@@ -60,11 +60,13 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
     List<Alert> alerts = browseAlertTable();
     logger.info("Successfully got data from alert table");
     String alertMessage = buildAlertMessage(alerts);
-    //sendAlert(alerts);
     logger.info(alertMessage);
     return;
   }
 
+  /*
+   * API to fetch records which qualifies for alerting from the main table
+   * */
   private static List<Alert> browseAlertTable() {
     List<Alert> alerts = new ArrayList();
     Alert alert = new Alert();
@@ -98,10 +100,10 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
         throw new RuntimeException(queryJob.getStatus().getError().toString());
       }
 
-      // Identify the table itself
+      // Identify the table 
       TableResult result = queryJob.getQueryResults();
 
-      // Get all pages of the results.
+      // Get all pages of the results
       for (FieldValueList row : result.iterateAll()) {
         // Get all values
         alert = new Alert();
@@ -113,11 +115,6 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
         alert.setConsumption(row.get("consumption").getNumericValue().floatValue());
 
         alerts.add(alert);
-        /*alerts.add(
-            String.format(
-                "Metric name: %s usage: %s consumption: %.2f%s", metric, usage, consumption, "%"));
-        logger.info(
-            "Alert : Metric " + metric + ": Usage " + usage + ": Consumption " + consumption + "%");*/
       }
       logger.info("Query ran successfully ");
     } catch (BigQueryException | InterruptedException e) {
@@ -137,7 +134,6 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
     htmlBuilder.append("|:---------|:------|:--------|:---------------|\n");
     for(Alert alert : alerts){
       htmlBuilder.append(alert.toString());
-      //htmlBuilder.append("<br>");
       htmlBuilder.append("|\n");
     }
     String html = htmlBuilder.toString();
