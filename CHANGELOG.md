@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.5.0](https://github.com/google/quota-monitoring-solution/compare/v4.4.0...v4.5.0) (2022-12-23)
+
+
+### Features
+
+* Alerting notification in html ([13f5754](https://github.com/google/quota-monitoring-solution/commit/13f5754e07c50e9e77d2640b6f29bddbd25bcc80))
+
+
+### Bug Fixes
+
+* Alerting fixes ([1a11ce8](https://github.com/google/quota-monitoring-solution/commit/1a11ce8393cb187a0db46ed14709a45988066272))
+
 ## [4.4.0](https://github.com/google/quota-monitoring-solution/compare/v4.3.0...v4.4.0) (2022-12-22)
 
 
