@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.5.1](https://github.com/google/quota-monitoring-solution/compare/v4.5.0...v4.5.1) (2022-12-30)
+
+
+### Bug Fixes
+
+* removed redundant code ([415ffbf](https://github.com/google/quota-monitoring-solution/commit/415ffbf33d8c5f9848ed21fe25ec96c6ed3a5d46))
+
 ## [4.5.0](https://github.com/google/quota-monitoring-solution/compare/v4.4.0...v4.5.0) (2022-12-23)
 
 
