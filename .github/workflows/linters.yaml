@@ -17,3 +17,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         LINTER_RULES_PATH: /
         MARKDOWN_CONFIG_FILE: .markdownlint.json
+        FILTER_REGEX_EXCLUDE: CHANGELOG.md
