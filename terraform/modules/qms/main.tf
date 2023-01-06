@@ -15,7 +15,8 @@ Copyright 2022 Google LLC
 */
 
 locals {
-  expanded_region = var.region == "us-central" || var.region == "europe-west" ? "${var.region}1" : var.region
+  expanded_region    = var.region == "us-central" || var.region == "europe-west" ? "${var.region}1" : var.region
+  use_github_release = var.qms_version != "main" ? true : false
 }
 
 # Enable Cloud Resource Manager API
@@ -97,7 +98,17 @@ resource "google_storage_bucket" "bucket_gcf_source" {
   force_destroy = "true"
 }
 
+data "archive_file" "local_source_code_zip" {
+  count = local.use_github_release ? 0 : 1
+
+  type        = "zip"
+  source_dir  = abspath("${path.module}/../../../quota-scan")
+  output_path = var.source_code_zip
+}
+
 resource "null_resource" "source_code_zip" {
+  count = local.use_github_release ? 1 : 0
+
   triggers = {
     on_version_change = var.qms_version
   }
@@ -113,7 +124,8 @@ resource "google_storage_bucket_object" "source_code_object" {
   source = var.source_code_zip
 
   depends_on = [
-    null_resource.source_code_zip
+    null_resource.source_code_zip,
+    data.archive_file.local_source_code_zip
   ]
 }
 
@@ -189,7 +201,17 @@ resource "google_cloudfunctions_function_iam_member" "invoker-scanProject" {
   member = "serviceAccount:${var.service_account_email}"
 }
 
+data "archive_file" "local_source_code_notification_zip" {
+  count = local.use_github_release ? 0 : 1
+
+  type        = "zip"
+  source_dir  = abspath("${path.module}/../../../quota-notification")
+  output_path = "./${var.source_code_notification_zip}"
+}
+
 resource "null_resource" "source_code_notification_zip" {
+  count = local.use_github_release ? 1 : 0
+
   triggers = {
     on_version_change = var.qms_version
   }
@@ -205,7 +227,8 @@ resource "google_storage_bucket_object" "source_code_notification_object" {
   source = var.source_code_notification_zip
 
   depends_on = [
-    null_resource.source_code_notification_zip
+    null_resource.source_code_notification_zip,
+    data.archive_file.local_source_code_notification_zip
   ]
 }
 
