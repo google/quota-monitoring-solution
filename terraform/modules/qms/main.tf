@@ -14,6 +14,10 @@ Copyright 2022 Google LLC
    limitations under the License.
 */
 
+locals {
+  expanded_region = var.region == "us-central" || var.region == "europe-west" ? "${var.region}1" : var.region
+}
+
 # Enable Cloud Resource Manager API
 module "project-service-cloudresourcemanager" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
@@ -69,7 +73,7 @@ resource "google_cloud_scheduler_job" "job" {
   schedule         = var.scheduler_cron_job_frequency
   time_zone        = var.scheduler_cron_job_timezone
   attempt_deadline = var.scheduler_cron_job_deadline
-  region           = var.region
+  region           = local.expanded_region
   depends_on       = [module.project-services]
   retry_config {
     retry_count = 1
@@ -89,7 +93,7 @@ resource "google_cloud_scheduler_job" "job" {
 resource "google_storage_bucket" "bucket_gcf_source" {
   name          = "${var.project_id}-gcf-source"
   storage_class = "REGIONAL"
-  location      = var.region
+  location      = local.expanded_region
   force_destroy = "true"
 }
 
@@ -118,6 +122,7 @@ resource "google_cloudfunctions_function" "function-listProjects" {
   name        = var.cloud_function_list_project
   description = var.cloud_function_list_project_desc
   runtime     = "java11"
+  region      = local.expanded_region
 
   available_memory_mb   = var.cloud_function_list_project_memory
   source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
@@ -150,6 +155,7 @@ resource "google_cloudfunctions_function" "function-scanProject" {
   name        = var.cloud_function_scan_project
   description = var.cloud_function_scan_project_desc
   runtime     = "java11"
+  region      = local.expanded_region
 
   available_memory_mb   = var.cloud_function_scan_project_memory
   source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
@@ -208,6 +214,7 @@ resource "google_cloudfunctions_function" "function-notificationProject" {
   name        = var.cloud_function_notification_project
   description = var.cloud_function_notification_project_desc
   runtime     = "java11"
+  region      = local.expanded_region
 
   available_memory_mb   = var.cloud_function_notification_project_memory
   source_archive_bucket = google_storage_bucket.bucket_gcf_source.name

@@ -26,8 +26,13 @@ variable "project_id" {
 }
 
 variable "region" {
-  description = "Value of the region to deploy the solution. Use the same region as used for App Engine"
+  description = "Value of the region to deploy the solution, use the same region as used for App Engine"
   type        = string
+
+  validation {
+    condition = var.region != "us-central1" && var.region != "europe-west1"
+    error_message = "Region must be set to an App Engine location. us-central1 and europe-west1 should be specified as us-central and europe-west respectively."
+  }
 }
 
 variable "service_account_email" {
