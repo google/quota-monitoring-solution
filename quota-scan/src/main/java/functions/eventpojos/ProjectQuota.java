@@ -24,7 +24,9 @@ public class ProjectQuota {
   private String timestamp;
   private String region;
   private String metric;
+  private String apiMethod;
   private String limitName;
+  private String quotaType;
   private Long currentUsage;
   private Long maxUsage;
   private Long quotaLimit;
@@ -62,6 +64,14 @@ public class ProjectQuota {
     this.metric = metric;
   }
 
+  public String getApiMethod() {
+    return apiMethod;
+  }
+
+  public void setApiMethod(String apiMethod) {
+    this.apiMethod = apiMethod;
+  }
+
   public String getLimitName() {
     return limitName;
   }
@@ -70,6 +80,14 @@ public class ProjectQuota {
     this.limitName = limitName;
   }
   
+  public String getQuotaType() {
+    return quotaType;
+  }
+
+  public void setQuotaType(String quotaType) {
+    this.quotaType = quotaType;
+  }
+
   public Long getCurrentUsage() {
     return currentUsage;
   }

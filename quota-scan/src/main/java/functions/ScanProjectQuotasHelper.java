@@ -112,7 +112,7 @@ public class ScanProjectQuotasHelper {
       QueryTimeSeriesPagedResponse response = queryServiceClient.queryTimeSeries(request);
       HashMap<String, Integer> indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
       for (TimeSeriesData data : response.iterateAll()) {
-        projectQuotas.add(populateProjectQuota(data, ts, indexMap));
+        projectQuotas.add(populateProjectQuota(data, ts, indexMap, quota));
       }
     } catch (IOException e) {
       logger.log(
@@ -141,14 +141,18 @@ public class ScanProjectQuotasHelper {
   }
 
   private static ProjectQuota populateProjectQuota(
-      TimeSeriesData data, Timestamp ts, HashMap<String, Integer> indexMap) {
+      TimeSeriesData data, Timestamp ts, HashMap<String, Integer> indexMap, Quotas q) {
     ProjectQuota projectQuota = new ProjectQuota();
 
     projectQuota.setProjectId(data.getLabelValues(indexMap.get("resource.project_id")).getStringValue());
     projectQuota.setTimestamp(ts.toString());
     projectQuota.setRegion(data.getLabelValues(indexMap.get("resource.location")).getStringValue());
     projectQuota.setMetric(data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue());
+    if(q == Quotas.RATE) {
+      projectQuota.setApiMethod(data.getLabelValues(indexMap.get("metric.method")).getStringValue());
+    }
     projectQuota.setLimitName(data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue());
+    projectQuota.setQuotaType(q.toString());
     projectQuota.setCurrentUsage(data.getPointData(0).getValues(indexMap.get("current")).getInt64Value());
     projectQuota.setMaxUsage(data.getPointData(0).getValues(indexMap.get("maximum")).getInt64Value());
     projectQuota.setQuotaLimit(data.getPointData(0).getValues(indexMap.get("limit")).getInt64Value());
@@ -196,7 +200,11 @@ public class ScanProjectQuotasHelper {
     rowContent.put("added_at", projectQuota.getTimestamp());
     rowContent.put("region", projectQuota.getRegion());
     rowContent.put("quota_metric", projectQuota.getMetric());
+    if(projectQuota.getQuotaType() == Quotas.RATE.toString()) {
+      rowContent.put("api_method", projectQuota.getApiMethod());
+    }
     rowContent.put("limit_name", projectQuota.getLimitName());
+    rowContent.put("quota_type", projectQuota.getQuotaType());
     rowContent.put("current_usage", projectQuota.getCurrentUsage());
     rowContent.put("max_usage", projectQuota.getMaxUsage());
     rowContent.put("quota_limit", projectQuota.getQuotaLimit());

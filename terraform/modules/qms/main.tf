@@ -290,10 +290,22 @@ resource "google_bigquery_table" "default" {
     "description": "Quota metric"
   },
   {
+    "name": "api_method",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Name of the api being used, only applicable to rate quotas."
+  },
+  {
     "name": "limit_name",
     "type": "STRING",
     "mode": "NULLABLE",
     "description": "Name of the limit"
+  },
+  {
+    "name": "quota_type",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "The type of quota, ALLOCATION or RATE"
   },
   {
     "name": "current_usage",
