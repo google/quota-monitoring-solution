@@ -452,93 +452,53 @@ Note: In case terraform fails, run terraform plan and terraform apply again
     ![ds_edit_data_source](img/ds_edit_data_source.png)
     It will open the data source details
     ![ds_datasource_config_step_1]img/ds_datasource_config_step_1.png
-6.  In the panel, select BigQuery project, dataset id and table name
-    ![updated-bq-only-latest-row](img/updated-bq-only-latest-row.png)
-7.  Verify the query by running in BigQuery Editor to make sure query returns right
-    results and there are no syntax errors:
-
-    Note: Replace BigQuery project id, dataset id and table name:
+6.  Replace the BigQuery Project Id, Dataset Id and Table Name to match your
+    deployment. Verify the query by running in BigQuery Editor to make sure
+    query the correct results and there are no syntax errors:
 
     ```sql
-    WITH
-        quota AS (
-        SELECT
-            project_id AS project_id,
-            region,
-            metric,
-            addedAt,
-            MAX(CASE
-                WHEN mv_type='limit' THEN m_value
-            ELSE
-            NULL
-            END
-            ) AS q_limit,
-            MAX(CASE
-                WHEN mv_type='usage' THEN m_value
-            ELSE
-            NULL
-            END
-            ) AS usage
-        FROM
-            quota-monitoring-project-49.quota_monitoring_dataset.quota_monitoring_table
-        GROUP BY
-            1,
-            2,
-            3,
-            4 )
-    SELECT
+    SELECT 
         project_id,
+        added_at,
         region,
-        metric,
-        addedAt,
+        quota_metric,
         CASE
-            WHEN q_limit='9223372036854775807' THEN 'unlimited'
+            WHEN CAST(quota_limit AS STRING) ='9223372036854775807' THEN 'unlimited'
         ELSE
-        q_limit
-    END
-        AS q_limit,
-        usage,
-        ROUND((SAFE_DIVIDE(CAST(t.usage AS BIGNUMERIC), CAST(t.q_limit AS BIGNUMERIC))*100),2) AS consumption
-    FROM (
-        SELECT
-            *,
-            RANK() OVER (PARTITION BY project_id, region, metric ORDER BY addedAt DESC) AS latest_row
-        FROM
-            quota) t
+            CAST(quota_limit AS STRING)
+        END AS str_quota_limit,
+        SUM(current_usage) AS current_usage,
+        ROUND((SAFE_DIVIDE(CAST(SUM(current_usage) AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC))*100),2) AS current_consumption,
+        SUM(max_usage) AS max_usage,
+        ROUND((SAFE_DIVIDE(CAST(SUM(max_usage) AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC))*100),2) AS max_consumption
+    FROM
+        (
+            SELECT
+                *,
+                RANK() OVER (PARTITION BY project_id, region, quota_metric ORDER BY added_at DESC) AS latest_row
+            FROM
+                `[YOUR_PROJECT_ID].quota_monitoring_dataset.quota_monitoring_table`
+        ) t
     WHERE
         latest_row=1
-        AND usage IS NOT NULL
-        AND q_limit IS NOT NULL
-        AND usage != '0'
-        AND q_limit != '0'
+        AND current_usage IS NOT NULL
+        AND quota_limit IS NOT NULL
+        AND current_usage != 0
+        AND quota_limit != 0
+        GROUP BY
+        project_id,
+        region,
+        quota_metric,
+        added_at,
+        quota_limit
     ```
 
-8.  After making sure that query is returning results, replace it in the Data
+7.  After making sure that query is returning results, replace it in the Data
     Studio, click on the ‘Reconnect’ button in the data source pane.
     ![ds_data_source_config_step_3](img/ds_data_source_config_step_3.png)
-9.  In the next window, click on the ‘Done’ button.
+8.  In the next window, click on the ‘Done’ button.
     ![ds_data_source_config_step_2](img/ds_data_source_config_step_2.png)
-10.  Click on ‘Region’ tab and repeat steps from 5 - 9 above with different
-     query: ![ds-region-middle](img/ds-region-middle.png)
-
-     The query is as follows: (Replace the project id, dataset id and table
-     name and verify query running in Bigquery editor)
-
-     ```sql
-     SELECT region, metric FROM quota-monitoring-project-49.quota_monitoring_dataset.quota_monitoring_table
-     WHERE m_value not like "0%"
-     GROUP BY
-         org_id,
-         project_id,
-         metric,
-         region,
-         vpc_name,
-         targetpool_name,
-         threshold,
-         m_value
-     ```
-
-11.  Once the data source is configured, click on the ‘View’ button on the top
+9.  Once the data source is configured, click on the ‘View’ button on the top
      right corner.
      Note: make additional changes in the layout like which metrics to be displayed
      on Dashboard, color shades for consumption column, number of rows for each
