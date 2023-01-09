@@ -387,29 +387,30 @@ gcloud iam service-accounts keys create key.json \
     *   main.tf
     *   variables.tf
     *   terraform.tfvars
-2.  Open terraform.tfvars file in your favourite editor and change values for
-    the variable
-3.  Values for variable source_code_base_url, qms_version, source_code_zip and
-    source_code_notification_zip are used to download the source for the QMS
-    Cloud Functions. If you want to upgrade to
-    latest code changes everytime you run 'terraform apply', change to this code
-    source repository. DO NOT CHANGE if you do not want to receive latest code
-    changes while running 'terraform apply' everytime after deployment.
-4.  For region, use the same region as used for app engine in earlier steps.
+
+2.  Open [terraform.tfvars](terraform/example/terraform.tfvars) file in your
+    favourite editor and change values for the variables.
 
     ```sh
     vi terraform.tfvars
     ```
 
-![updated-tfvars](img/terraform-updated.png)
+3.  For `region`, use the same region as used for App Engine in earlier steps.
+
+    The variables `source_code_base_url`, `qms_version`, `source_code_zip`
+    and `source_code_notification_zip` on the QMS module are used to download
+    the source for the QMS Cloud Functions from the latest GitHub [release](https://github.com/google/quota-monitoring-solution/releases).
+
+    To deploy the latest unreleased code from a local clone of the QMS
+    repository, set `qms_version` to `main`
 
 ### 3.8 Run Terraform
 
 1.  Run terraform commands
-    *   terraform init
-    *   terraform plan
-    *   terraform apply
-        *   On Prompt Enter a value: yes
+    *   `terraform init`
+    *   `terraform plan`
+    *   `terraform apply`
+        *   On Prompt Enter a value: `yes`
 
 2.  This will:
     *   Enable required APIs
