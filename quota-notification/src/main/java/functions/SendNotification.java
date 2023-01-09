@@ -15,7 +15,8 @@ Copyright 2022 Google LLC
 */
 package functions;
 
-import com.google.cloud.MonitoredResource;
+import static functions.ConfigureAppAlertHelper.listAppAlertConfig;
+
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.BigQueryOptions;
@@ -27,16 +28,13 @@ import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.cloud.functions.BackgroundFunction;
 import com.google.cloud.functions.Context;
-import com.google.cloud.logging.LogEntry;
-import com.google.cloud.logging.Logging;
-import com.google.cloud.logging.LoggingOptions;
-import com.google.cloud.logging.Payload.StringPayload;
-import com.google.cloud.logging.Severity;
 import functions.eventpojos.Alert;
+import functions.eventpojos.AppAlert;
 import functions.eventpojos.PubSubMessage;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -47,6 +45,8 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
   private static final String HOME_PROJECT = System.getenv("HOME_PROJECT");
   private static final String DATASET = System.getenv("ALERT_DATASET");
   private static final String TABLE = System.getenv("ALERT_TABLE");
+  private static final String APP_ALERT_DATASET = System.getenv("APP_ALERT_DATASET");
+  private static final String APP_ALERT_TABLE = System.getenv("APP_ALERT_TABLE");
 
   private static final Logger logger = Logger.getLogger(SendNotification.class.getName());
 
@@ -55,24 +55,26 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
    * */
   @Override
   public void accept(PubSubMessage message, Context context) {
+    // Initialize client that will be used to send requests
+    BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     // logger.info(String.format(message.getEmailIds()));
     logger.info("Successfully made it to sendNotification");
-    List<Alert> alerts = browseAlertTable();
+    List<Alert> alerts = browseAlertTable(bigquery);
     logger.info("Successfully got data from alert table");
-    String alertMessage = buildAlertMessage(alerts);
+    String alertMessage = buildAlertMessage(alerts, null);
     logger.info(alertMessage);
+    appAlertLogs(bigquery, alerts);
     return;
   }
 
   /*
    * API to fetch records which qualifies for alerting from the main table
    * */
-  private static List<Alert> browseAlertTable() {
+  private static List<Alert> browseAlertTable(BigQuery bigquery) {
     List<Alert> alerts = new ArrayList();
     Alert alert = new Alert();
     try {
-      // Initialize client that will be used to send requests
-      BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
+
       QueryJobConfiguration queryConfig =
           QueryJobConfiguration.newBuilder(
                   "SELECT project_id, region, metric, usage,q_limit, consumption "
@@ -126,11 +128,14 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
   /*
    * API to build Alert Message for list of Quota metrics
    * */
-  private static String buildAlertMessage(List<Alert> alerts){
+  private static String buildAlertMessage(List<Alert> alerts, String appCode){
     StringBuilder htmlBuilder = new StringBuilder();
     htmlBuilder.append("Quota metric usage alert details\n\n");
     htmlBuilder.append("## "+alerts.size()+" quota metric usages above threshold\n\n");
-    htmlBuilder.append("|ProjectId | Scope | Metric  | Consumption(%) |\n");
+    if(appCode == null)
+      htmlBuilder.append("|ProjectId | Scope | Metric  | Consumption(%) |\n");
+    else
+      htmlBuilder.append("|AppCode-"+appCode+" | ProjectId | Scope | Metric  | Consumption(%) |\n");
     htmlBuilder.append("|:---------|:------|:--------|:---------------|\n");
     for(Alert alert : alerts){
       htmlBuilder.append(alert.toString());
@@ -138,5 +143,23 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
     }
     String html = htmlBuilder.toString();
     return html;
+  }
+
+  private static void appAlertLogs(BigQuery bigquery, List<Alert> alerts){
+    List<AppAlert> appAlertsConfigs = listAppAlertConfig(bigquery);
+    Map<String, String> appAlertsConfigsMap = new HashMap<>();
+
+    //Convert List to Map
+    for(AppAlert appAlertConfig : appAlertsConfigs){
+      appAlertsConfigsMap.put(appAlertConfig.getProjectId(), appAlertConfig.getAppCode());
+    }
+
+    for(Alert alert : alerts){
+      String appCode = appAlertsConfigsMap.get(alert.getProjectId());
+      if (appAlertsConfigsMap.containsKey(alert.getProjectId())){
+        String alertMessage = buildAlertMessage(alerts, appCode);
+        logger.info(alertMessage);
+      }
+    }
   }
 }

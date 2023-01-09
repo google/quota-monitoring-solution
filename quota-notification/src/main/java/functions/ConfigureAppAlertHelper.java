@@ -3,7 +3,6 @@ package functions;
 import com.google.cloud.ReadChannel;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
-import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.CsvOptions;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldValueList;
@@ -54,8 +53,8 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ConfigureAppAlertHelper {
   private static final String HOME_PROJECT = ConfigureAppAlert.HOME_PROJECT;
-  private static final String DATASET = ConfigureAppAlert.DATASET;
-  private static final String TABLE = ConfigureAppAlert.TABLE;
+  private static final String DATASET = ConfigureAppAlert.APP_ALERT_DATASET;
+  private static final String TABLE = ConfigureAppAlert.APP_ALERT_TABLE;
   private static final String CSV_SOURCE_URI = ConfigureAppAlert.CSV_SOURCE_URI;
 
   private static final Logger logger = Logger.getLogger(ConfigureAppAlertHelper.class.getName());
@@ -154,7 +153,7 @@ public class ConfigureAppAlertHelper {
    * API to fetch App Alert configurations from BigQuery
    * @return - List of App Alerts
    * */
-  private static List<AppAlert> listAppAlertConfig(BigQuery bigquery){
+  public static List<AppAlert> listAppAlertConfig(BigQuery bigquery){
     List<AppAlert> appAlerts = new ArrayList<>();
     QueryJobConfiguration queryConfig =
         QueryJobConfiguration.newBuilder(
