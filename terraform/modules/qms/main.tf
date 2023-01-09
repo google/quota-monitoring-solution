@@ -14,6 +14,11 @@ Copyright 2022 Google LLC
    limitations under the License.
 */
 
+locals {
+  expanded_region    = var.region == "us-central" || var.region == "europe-west" ? "${var.region}1" : var.region
+  use_github_release = var.qms_version != "main" ? true : false
+}
+
 # Enable Cloud Resource Manager API
 module "project-service-cloudresourcemanager" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
@@ -69,7 +74,7 @@ resource "google_cloud_scheduler_job" "job" {
   schedule         = var.scheduler_cron_job_frequency
   time_zone        = var.scheduler_cron_job_timezone
   attempt_deadline = var.scheduler_cron_job_deadline
-  region           = var.region
+  region           = local.expanded_region
   depends_on       = [module.project-services]
   retry_config {
     retry_count = 1
@@ -89,11 +94,21 @@ resource "google_cloud_scheduler_job" "job" {
 resource "google_storage_bucket" "bucket_gcf_source" {
   name          = "${var.project_id}-gcf-source"
   storage_class = "REGIONAL"
-  location      = var.region
+  location      = local.expanded_region
   force_destroy = "true"
 }
 
+data "archive_file" "local_source_code_zip" {
+  count = local.use_github_release ? 0 : 1
+
+  type        = "zip"
+  source_dir  = abspath("${path.module}/../../../quota-scan")
+  output_path = var.source_code_zip
+}
+
 resource "null_resource" "source_code_zip" {
+  count = local.use_github_release ? 1 : 0
+
   triggers = {
     on_version_change = var.qms_version
   }
@@ -109,7 +124,8 @@ resource "google_storage_bucket_object" "source_code_object" {
   source = var.source_code_zip
 
   depends_on = [
-    null_resource.source_code_zip
+    null_resource.source_code_zip,
+    data.archive_file.local_source_code_zip
   ]
 }
 
@@ -118,6 +134,7 @@ resource "google_cloudfunctions_function" "function-listProjects" {
   name        = var.cloud_function_list_project
   description = var.cloud_function_list_project_desc
   runtime     = "java11"
+  region      = local.expanded_region
 
   available_memory_mb   = var.cloud_function_list_project_memory
   source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
@@ -150,6 +167,7 @@ resource "google_cloudfunctions_function" "function-scanProject" {
   name        = var.cloud_function_scan_project
   description = var.cloud_function_scan_project_desc
   runtime     = "java11"
+  region      = local.expanded_region
 
   available_memory_mb   = var.cloud_function_scan_project_memory
   source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
@@ -183,7 +201,17 @@ resource "google_cloudfunctions_function_iam_member" "invoker-scanProject" {
   member = "serviceAccount:${var.service_account_email}"
 }
 
+data "archive_file" "local_source_code_notification_zip" {
+  count = local.use_github_release ? 0 : 1
+
+  type        = "zip"
+  source_dir  = abspath("${path.module}/../../../quota-notification")
+  output_path = "./${var.source_code_notification_zip}"
+}
+
 resource "null_resource" "source_code_notification_zip" {
+  count = local.use_github_release ? 1 : 0
+
   triggers = {
     on_version_change = var.qms_version
   }
@@ -199,7 +227,8 @@ resource "google_storage_bucket_object" "source_code_notification_object" {
   source = var.source_code_notification_zip
 
   depends_on = [
-    null_resource.source_code_notification_zip
+    null_resource.source_code_notification_zip,
+    data.archive_file.local_source_code_notification_zip
   ]
 }
 
@@ -208,6 +237,7 @@ resource "google_cloudfunctions_function" "function-notificationProject" {
   name        = var.cloud_function_notification_project
   description = var.cloud_function_notification_project_desc
   runtime     = "java11"
+  region      = local.expanded_region
 
   available_memory_mb   = var.cloud_function_notification_project_memory
   source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
@@ -266,70 +296,70 @@ resource "google_bigquery_table" "default" {
   schema = <<EOF
 [
   {
-    "name": "threshold",
-    "type": "INT64",
+    "name": "project_id",
+    "type": "STRING",
     "mode": "NULLABLE",
-    "description": "region"
+    "description": "Project Id the quota metric applies to"
+  },
+  {
+    "name": "added_at",
+    "type": "TIMESTAMP",
+    "mode": "NULLABLE",
+    "description": "Time at which the quota data was retrieved"
   },
   {
     "name": "region",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "region"
+    "description": "Region the quota metric applies to"
   },
   {
-    "name": "m_value",
+    "name": "quota_metric",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "Quota metric value - usage or limit"
+    "description": "Quota metric"
   },
   {
-    "name": "mv_type",
+    "name": "api_method",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "Type of metric value - usage or limit"
+    "description": "Name of the api being used, only applicable to rate quotas."
   },
   {
-    "name": "vpc_name",
+    "name": "limit_name",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "vpc name"
+    "description": "Name of the limit"
   },
   {
-    "name": "metric",
+    "name": "quota_type",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "quota metric"
+    "description": "The type of quota, ALLOCATION or RATE"
   },
   {
-    "name": "addedAt",
-    "type": "TIMESTAMP",
+    "name": "current_usage",
+    "type": "INT64",
     "mode": "NULLABLE",
-    "description": "timestamp"
+    "description": "Current usage against the quota"
   },
   {
-    "name": "project_id",
-    "type": "STRING",
+    "name": "max_usage",
+    "type": "INT64",
     "mode": "NULLABLE",
-    "description": "project id"
+    "description": "Maximum usage against the quota in the query window"
   },
   {
-    "name": "folder_id",
-    "type": "STRING",
+    "name": "quota_limit",
+    "type": "INT64",
     "mode": "NULLABLE",
-    "description": "folder id"
+    "description": "Quota limit for the metric"
   },
   {
-    "name": "targetpool_name",
-    "type": "STRING",
+    "name": "threshold",
+    "type": "INT64",
     "mode": "NULLABLE",
-    "description": "target pool name"
-  },
-  {
-    "name": "org_id",
-    "type": "STRING",
-    "mode": "NULLABLE",
-    "description": "organization id of the project"
+    "description": "Alerting threshold for the quota metric"
   }
 ]
 EOF
@@ -348,7 +378,7 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   params = {
     destination_table_name_template = var.big_query_alert_table_id
     write_disposition               = "WRITE_TRUNCATE"
-    query                           = "SELECT metric,usage,q_limit,consumption,project_id,region,addedAt FROM (SELECT project_id,region,metric,addedAt,q_limit,usage,ROUND((SAFE_DIVIDE(CAST(t.usage AS BIGNUMERIC),CAST(t.q_limit AS BIGNUMERIC))*100),2) AS consumption,threshold FROM (SELECT project_id,region,metric,addedAt,MAX(CASE WHEN mv_type='limit' THEN m_value ELSE NULL END) AS q_limit,MAX(CASE WHEN mv_type='usage' THEN m_value ELSE NULL END) AS usage,threshold FROM ${var.project_id}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.default.table_id} GROUP BY 1,2,3,4,7 ) t ) c WHERE c.consumption >= c.threshold"
+    query                           = "SELECT quota_metric, current_usage, max_usage, quota_limit, current_consumption, max_consumption, project_id, region, added_at FROM ( SELECT project_id, region, metric, added_at, quota_limit, current_usage, max_usage, ROUND( ( SAFE_DIVIDE( CAST(current_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS current_consumption, ROUND( ( SAFE_DIVIDE( CAST(max_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS max_consumption, threshold FROM $ { var.project_id }.$ { google_bigquery_dataset.dataset.dataset_id }.$ { google_bigquery_table.default.table_id } ) c WHERE c.current_consumption >= c.threshold OR c.max_consumption >= c.threshold"
   }
 }
 
