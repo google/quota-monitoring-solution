@@ -58,12 +58,14 @@ module "project-services" {
 # Create Pub/Sub topic to list projects in the parent node
 resource "google_pubsub_topic" "topic_alert_project_id" {
   name       = var.topic_alert_project_id
+  labels     = var.qms_deployment_labels
   depends_on = [module.project-services]
 }
 
 # Create Pub/Sub topic to send notification
 resource "google_pubsub_topic" "topic_alert_notification" {
   name       = var.topic_alert_notification
+  labels     = var.qms_deployment_labels
   depends_on = [module.project-services]
 }
 
@@ -75,7 +77,7 @@ resource "google_cloud_scheduler_job" "job" {
   time_zone        = var.scheduler_cron_job_timezone
   attempt_deadline = var.scheduler_cron_job_deadline
   region           = local.expanded_region
-  depends_on       = [module.project-services]
+
   retry_config {
     retry_count = 1
   }
@@ -89,6 +91,8 @@ resource "google_cloud_scheduler_job" "job" {
       service_account_email = var.service_account_email
     }
   }
+
+  depends_on       = [module.project-services]
 }
 
 resource "google_storage_bucket" "bucket_gcf_source" {
@@ -96,6 +100,7 @@ resource "google_storage_bucket" "bucket_gcf_source" {
   storage_class = "REGIONAL"
   location      = local.expanded_region
   force_destroy = "true"
+  labels        = var.qms_deployment_labels
 }
 
 data "archive_file" "local_source_code_zip" {
@@ -143,12 +148,14 @@ resource "google_cloudfunctions_function" "function-listProjects" {
   entry_point           = "functions.ListProjects"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_list_project_timeout
-  depends_on            = [module.project-services]
+  labels                = var.qms_deployment_labels
 
   environment_variables = {
     PUBLISH_TOPIC = google_pubsub_topic.topic_alert_project_id.name
     HOME_PROJECT  = var.project_id
   }
+
+  depends_on            = [module.project-services]
 }
 
 # IAM entry for all users to invoke the function
@@ -175,7 +182,7 @@ resource "google_cloudfunctions_function" "function-scanProject" {
   entry_point           = "functions.ScanProjectQuotas"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_scan_project_timeout
-  depends_on            = [module.project-services]
+  labels                = var.qms_deployment_labels
 
   event_trigger {
     event_type = "google.pubsub.topic.publish"
@@ -188,6 +195,8 @@ resource "google_cloudfunctions_function" "function-scanProject" {
     BIG_QUERY_DATASET  = var.big_query_dataset_id
     BIG_QUERY_TABLE    = var.big_query_table_id
   }
+
+  depends_on            = [module.project-services]
 }
 
 # IAM entry for all users to invoke the function
@@ -245,7 +254,7 @@ resource "google_cloudfunctions_function" "function-notificationProject" {
   entry_point           = "functions.SendNotification"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_notification_project_timeout
-  depends_on            = [module.project-services]
+  labels                = var.qms_deployment_labels
 
   event_trigger {
     event_type = "google.pubsub.topic.publish"
@@ -257,6 +266,8 @@ resource "google_cloudfunctions_function" "function-notificationProject" {
     ALERT_DATASET = var.big_query_alert_dataset_id
     ALERT_TABLE   = var.big_query_alert_table_id
   }
+
+  depends_on            = [module.project-services]
 }
 
 # IAM entry for all users to invoke the function
@@ -277,6 +288,8 @@ resource "google_bigquery_dataset" "dataset" {
   description                     = var.big_query_dataset_desc
   location                        = var.big_query_dataset_location
   default_partition_expiration_ms = var.big_query_dataset_default_partition_expiration_ms
+  labels                          = var.qms_deployment_labels
+
   depends_on                      = [module.project-services]
 }
 
@@ -284,13 +297,10 @@ resource "google_bigquery_dataset" "dataset" {
 resource "google_bigquery_table" "default" {
   dataset_id = google_bigquery_dataset.dataset.dataset_id
   table_id   = var.big_query_table_id
+  labels     = var.qms_deployment_labels
 
   time_partitioning {
     type = var.big_query_table_partition
-  }
-
-  labels = {
-    env = "default"
   }
 
   schema = <<EOF
@@ -374,12 +384,14 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   schedule                  = var.Alert_data_scanning_frequency
   notification_pubsub_topic = google_pubsub_topic.topic_alert_notification.id
   destination_dataset_id    = google_bigquery_dataset.quota_usage_alert_dataset.dataset_id
-  depends_on                = [module.project-services]
+  
   params = {
     destination_table_name_template = var.big_query_alert_table_id
     write_disposition               = "WRITE_TRUNCATE"
     query                           = "SELECT quota_metric, current_usage, max_usage, quota_limit, current_consumption, max_consumption, project_id, region, added_at FROM ( SELECT project_id, region, metric, added_at, quota_limit, current_usage, max_usage, ROUND( ( SAFE_DIVIDE( CAST(current_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS current_consumption, ROUND( ( SAFE_DIVIDE( CAST(max_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS max_consumption, threshold FROM $ { var.project_id }.$ { google_bigquery_dataset.dataset.dataset_id }.$ { google_bigquery_table.default.table_id } ) c WHERE c.current_consumption >= c.threshold OR c.max_consumption >= c.threshold"
   }
+
+  depends_on                = [module.project-services]
 }
 
 #Bigquery Alert Dataset
@@ -388,6 +400,8 @@ resource "google_bigquery_dataset" "quota_usage_alert_dataset" {
   friendly_name = "quota_usage_alert_dataset"
   description   = var.big_query_alert_dataset_desc
   location      = var.big_query_dataset_location
+  labels        = var.qms_deployment_labels
+
   depends_on    = [module.project-services]
 }
 

@@ -93,6 +93,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
       - [New in v4.4.0](#new-in-v440)
   - [5. What is Next](#5-what-is-next)
   - [5. Contact Us](#5-contact-us)
+  - [6. Privacy Notice](#6-privacy-notice)
 <!-- markdownlint-restore -->
 
 ### 3.1 Prerequisites
@@ -607,3 +608,51 @@ the specified threshold limit.
 ## 5. Contact Us
 
 For any comments, issues or feedback, please reach out to us at quota-monitoring-solution@google.com
+
+## 6. Privacy Notice
+
+Within the Terraform/configuration code used to deploy this solution, there is
+logic that assigns a label to the underlying resources being utilized.  These
+labels will provide granularity in billing statements and information that will
+be used to help prioritize solution roadmap features and functions, and this
+data will be processed in accordance with the [Google Cloud Privacy Notice](https://cloud.google.com/terms/cloud-privacy-notice)
+(the “Privacy Notice”). This logic can be removed and disabled by simply
+deleting the logic (see example below) which will stop any further data
+collection related to the logic/data collection but existing collected data
+will be retained per the Privacy Notice).
+
+In the script, there will be a variable assigned called qms_deployment_labels.
+
+```hcl
+variable "qms_deployment_labels" {
+  type    = map(string)
+  default = {goog-packaged-solution = "quota-monitoring"}
+}
+```
+
+This variable is then assigned to resources per the example below.
+
+```hcl
+resource "google_cloudfunctions_function" "function-listProjects" {
+  name        = var.cloud_function_list_project
+  description = var.cloud_function_list_project_desc
+  runtime     = "java11"
+  region      = local.expanded_region
+
+  available_memory_mb   = var.cloud_function_list_project_memory
+  source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
+  source_archive_object = google_storage_bucket_object.source_code_object.name
+  trigger_http          = true
+  entry_point           = "functions.ListProjects"
+  service_account_email = var.service_account_email
+  timeout               = var.cloud_function_list_project_timeout
+  labels                = var.qms_deployment_labels
+
+  environment_variables = {
+    PUBLISH_TOPIC = google_pubsub_topic.topic_alert_project_id.name
+    HOME_PROJECT  = var.project_id
+  }
+
+  depends_on            = [module.project-services]
+}
+```

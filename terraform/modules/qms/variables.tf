@@ -281,3 +281,7 @@ variable "retention_days" {
   default     = 30
 }
 
+variable "qms_deployment_labels" {
+  type    = map(string)
+  default = {goog-packaged-solution = "quota-monitoring"}
+}
