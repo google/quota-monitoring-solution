@@ -12,10 +12,10 @@ import com.google.cloud.functions.HttpResponse;
 import java.util.logging.Logger;
 
 public class ConfigureAppAlert implements HttpFunction {
-  public static final String HOME_PROJECT = "quota-monitoring-project-78";//System.getenv("HOME_PROJECT");
-  public static final String APP_ALERT_DATASET = "quota_monitoring_notification_dataset";//System.getenv("APP_ALERT_DATASET");
-  public static final String APP_ALERT_TABLE = "quota_monitoring_decentralize_alerting_table";//System.getenv("APP_ALERT_TABLE");
-  public static final String CSV_SOURCE_URI = "gs://quota-monitoring-project-78-gcf-source/QMS_app_alerting.csv";//System.getenv("CSV_SOURCE_URI");
+  public static final String HOME_PROJECT = System.getenv("HOME_PROJECT");
+  public static final String APP_ALERT_DATASET = System.getenv("APP_ALERT_DATASET");
+  public static final String APP_ALERT_TABLE = System.getenv("APP_ALERT_TABLE");
+  public static final String CSV_SOURCE_URI = System.getenv("CSV_SOURCE_URI");
 
   private static final Logger logger = Logger.getLogger(ConfigureAppAlert.class.getName());
 

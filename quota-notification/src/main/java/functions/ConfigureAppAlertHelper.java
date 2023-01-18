@@ -59,6 +59,8 @@ public class ConfigureAppAlertHelper {
 
   private static final Logger logger = Logger.getLogger(ConfigureAppAlertHelper.class.getName());
 
+
+
   /*
    * API to initialize App Alert table.
    * This API loads data from csv file in Cloud Storage bucket to BigQuery table

@@ -77,7 +77,7 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
 
       QueryJobConfiguration queryConfig =
           QueryJobConfiguration.newBuilder(
-                  "SELECT project_id, region, metric, usage,q_limit, consumption "
+                  "SELECT project_id, region, quota_metric, current_usage, quota_limit, current_consumption "
                       + "FROM `"
                       + HOME_PROJECT
                       + "."
@@ -102,7 +102,7 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
         throw new RuntimeException(queryJob.getStatus().getError().toString());
       }
 
-      // Identify the table 
+      // Identify the table
       TableResult result = queryJob.getQueryResults();
 
       // Get all pages of the results
@@ -111,10 +111,10 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
         alert = new Alert();
         alert.setProjectId(row.get("project_id").getStringValue());
         alert.setRegion(row.get("region").getStringValue());
-        alert.setMetric(row.get("metric").getStringValue());
-        alert.setLimit(row.get("q_limit").getStringValue());
-        alert.setUsage(row.get("usage").getStringValue());
-        alert.setConsumption(row.get("consumption").getNumericValue().floatValue());
+        alert.setQuotaMetric(row.get("quota_metric").getStringValue());
+        alert.setQuotaLimit(row.get("quota_limit").getStringValue());
+        alert.setCurrentUsage(row.get("current_usage").getStringValue());
+        alert.setCurrentConsumption(row.get("current_consumption").getNumericValue().floatValue());
 
         alerts.add(alert);
       }
@@ -145,9 +145,13 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
     return html;
   }
 
+  /*
+   * API to log App Alert Message for list of Quota metrics
+   * */
   private static void appAlertLogs(BigQuery bigquery, List<Alert> alerts){
     List<AppAlert> appAlertsConfigs = listAppAlertConfig(bigquery);
     Map<String, String> appAlertsConfigsMap = new HashMap<>();
+    Map<String, List<Alert>> appAlerts = new HashMap<>();
 
     //Convert List to Map
     for(AppAlert appAlertConfig : appAlertsConfigs){
@@ -157,9 +161,89 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
     for(Alert alert : alerts){
       String appCode = appAlertsConfigsMap.get(alert.getProjectId());
       if (appAlertsConfigsMap.containsKey(alert.getProjectId())){
-        String alertMessage = buildAlertMessage(alerts, appCode);
+        if(appAlerts.containsKey(appCode)){
+          appAlerts.get(appCode).add(alert);
+        } else {
+          List<Alert> appAlert = new ArrayList<>();
+          appAlert.add(alert);
+          appAlerts.put(appCode, appAlert);
+        }
+
+      }
+    }
+
+    for(Map.Entry<String, List<Alert>> entry : appAlerts.entrySet() ){
+      if(entry.getValue().size() > 0){
+        String alertMessage = buildAlertMessage(entry.getValue(), entry.getKey());
         logger.info(alertMessage);
       }
     }
+  }
+
+  /*
+   * API to fetch App Alert configurations from BigQuery
+   * @return - List of App Alerts
+   * */
+  public static List<AppAlert> listAppAlertConfig(BigQuery bigquery){
+    List<AppAlert> appAlerts = new ArrayList<>();
+    QueryJobConfiguration queryConfig =
+        QueryJobConfiguration.newBuilder(
+                "SELECT * "
+                    + "FROM `"
+                    + HOME_PROJECT
+                    + "."
+                    + APP_ALERT_DATASET
+                    + "."
+                    + APP_ALERT_TABLE
+                    + "` ")
+            .setUseLegacySql(false)
+            .build();
+
+    TableResult result = executeBigQueryQuery(bigquery, queryConfig);
+
+    // Get all pages of the results
+    for (FieldValueList row : result.iterateAll()) {
+      // Get all values
+      AppAlert appAlert = new AppAlert();
+      appAlert.setProjectId(row.get("project_id").getStringValue());
+      appAlert.setEmailId(row.get("email_id").getStringValue());
+      appAlert.setAppCode(row.get("app_code").getStringValue());
+      appAlert.setDashboardUrl(row.get("dashboard_url").isNull() ? null : row.get("dashboard_url").getStringValue());
+      appAlert.setNotificationChannelId(row.get("notification_channel_id").isNull() ? null : row.get("notification_channel_id").getStringValue());
+      appAlert.setCustomLogMetricId(row.get("custom_log_metric_id").isNull() ? null : row.get("custom_log_metric_id").getStringValue());
+      appAlert.setAlertPolicyId(row.get("alert_policy_id").isNull() ? null : row.get("alert_policy_id").getStringValue());
+      appAlerts.add(appAlert);
+    }
+    logger.info("Query ran successfully to list App Alerts!");
+
+    return appAlerts;
+  }
+
+  /*
+   * API to execute DML query on BigQuery table for the given query
+   * */
+  private static TableResult executeBigQueryQuery(BigQuery bigquery, QueryJobConfiguration queryConfig){
+    TableResult result = null;
+    try{
+      // Create a job ID so that we can safely retry.
+      JobId jobId = JobId.of(UUID.randomUUID().toString());
+      Job queryJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
+
+      // Wait for the query to complete.
+      queryJob = queryJob.waitFor();
+
+      // Check for errors
+      if (queryJob == null) {
+        throw new RuntimeException("Job no longer exists");
+      } else if (queryJob.getStatus().getError() != null) {
+        throw new RuntimeException(queryJob.getStatus().getError().toString());
+      }
+
+      // Identify the table
+      result = queryJob.getQueryResults();
+    } catch (InterruptedException e) {
+      logger.severe("Error executing BigQuery query"+e.getMessage());
+    }
+    return result;
   }
 }

@@ -92,10 +92,10 @@ resource "google_cloud_scheduler_job" "job" {
 }
 
 # Cloud scheduler job to invoke config app alert cloud function
-resource "google_cloud_scheduler_job" "job" {
-  name             = var.scheduler_cron_job_name
-  description      = var.scheduler_cron_job_description
-  schedule         = var.scheduler_cron_job_frequency
+resource "google_cloud_scheduler_job" "app_alert_configure_job" {
+  name             = var.scheduler_app_alert_config_job_name
+  description      = var.scheduler_app_alert_job_description
+  schedule         = var.scheduler_app_alert_job_frequency
   time_zone        = var.scheduler_cron_job_timezone
   attempt_deadline = var.scheduler_cron_job_deadline
   region           = local.expanded_region
@@ -438,7 +438,7 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   params = {
     destination_table_name_template = var.big_query_alert_table_id
     write_disposition               = "WRITE_TRUNCATE"
-    query                           = "SELECT quota_metric, current_usage, max_usage, quota_limit, current_consumption, max_consumption, project_id, region, added_at FROM ( SELECT project_id, region, metric, added_at, quota_limit, current_usage, max_usage, ROUND( ( SAFE_DIVIDE( CAST(current_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS current_consumption, ROUND( ( SAFE_DIVIDE( CAST(max_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS max_consumption, threshold FROM $ { var.project_id }.$ { google_bigquery_dataset.dataset.dataset_id }.$ { google_bigquery_table.default.table_id } ) c WHERE c.current_consumption >= c.threshold OR c.max_consumption >= c.threshold"
+    query                           = "SELECT quota_metric, current_usage, max_usage, quota_limit, current_consumption, max_consumption, project_id, region, added_at FROM ( SELECT project_id, region, quota_metric, added_at, quota_limit, current_usage, max_usage, ROUND( ( SAFE_DIVIDE( CAST(current_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS current_consumption, ROUND( ( SAFE_DIVIDE( CAST(max_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS max_consumption, threshold FROM ${var.project_id}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.default.table_id} ) c WHERE c.current_consumption >= c.threshold OR c.max_consumption >= c.threshold"
   }
 }
 
