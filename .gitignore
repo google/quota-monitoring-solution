@@ -9,3 +9,4 @@ terraform/example/*.zip
 !/.gitignore
 !/.github
 !/.markdownlint.json
+*.iml
