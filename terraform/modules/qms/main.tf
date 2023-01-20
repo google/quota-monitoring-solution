@@ -320,7 +320,7 @@ resource "google_cloudfunctions_function" "function-configureAppAlert" {
   entry_point           = "functions.ConfigureAppAlert"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_config_app_alert_timeout
-  depends_on            = [module.project-services]
+  labels                = var.qms_deployment_labels
 
   environment_variables = {
     HOME_PROJECT  = var.project_id
@@ -328,6 +328,8 @@ resource "google_cloudfunctions_function" "function-configureAppAlert" {
     APP_ALERT_TABLE   = var.big_query_app_alert_table_id
     CSV_SOURCE_URI = "gs://${google_storage_bucket.bucket_gcf_source.name}/${var.app_alert_csv_file_name}"
   }
+
+  depends_on            = [module.project-services]
 }
 
 # IAM entry for all users to invoke the function
@@ -469,13 +471,10 @@ resource "google_bigquery_dataset" "quota_usage_alert_dataset" {
 resource "google_bigquery_table" "quota_monitoring_app_alerting_table" {
   dataset_id = var.big_query_alert_dataset_id
   table_id   = var.big_query_app_alert_table_id
+  labels     = var.qms_deployment_labels
 
   time_partitioning {
     type = var.big_query_table_partition
-  }
-
-  labels = {
-    env = "default"
   }
 
   schema = <<EOF
