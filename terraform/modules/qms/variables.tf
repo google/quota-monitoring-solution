@@ -88,6 +88,24 @@ variable "scheduler_cron_job_deadline" {
   default     = "540s"
 }
 
+variable "scheduler_app_alert_config_job_name" {
+  description = "Value of name of app alert config job scheduler"
+  type        = string
+  default     = "quota-monitoring-app-alert-config"
+}
+
+variable "scheduler_app_alert_job_description" {
+  description = "Value of description of app alert config job scheduler"
+  type        = string
+  default     = "trigger app alert config cloud function"
+}
+
+variable "scheduler_app_alert_job_frequency" {
+  description = "Value of the app alert job frequency to trigger the solution"
+  type        = string
+  default     = "5 4 * * SUN" //Every Sunday at 04:05 (4:05 AM)
+}
+
 variable "source_code_base_url" {
   description = "Base URL to use when downloading source code for QMS Cloud Functions"
   type        = string
@@ -178,6 +196,30 @@ variable "cloud_function_notification_project_timeout" {
   default     = 540
 }
 
+variable "cloud_function_config_app_alert" {
+  description = "Value of the name for the Cloud Function to app alerts"
+  type        = string
+  default     = "configAppAlerts"
+}
+
+variable "cloud_function_config_app_alert_desc" {
+  description = "Value of the description for the Cloud Function to configure app alerts"
+  type        = string
+  default     = "Configure app alerts"
+}
+
+variable "cloud_function_config_app_alert_memory" {
+  description = "Value of the memory for the Cloud Function to configure app alerts"
+  type        = number
+  default     = 512
+}
+
+variable "cloud_function_config_app_alert_timeout" {
+  description = "Value of the timeout for the Cloud Function to configure app alerts"
+  type        = number
+  default     = 540
+}
+
 variable "big_query_dataset_id" {
   description = "Value of the Big Query Dataset Id"
   type        = string
@@ -232,6 +274,12 @@ variable "big_query_alert_table_id" {
   default     = "quota_monitoring_notification_table"
 }
 
+variable "big_query_app_alert_table_id" {
+  description = "Value of the Big Query Table Id to store mapping of project_id and notification channel for app level alerting"
+  type        = string
+  default     = "quota_monitoring_app_alerting_table"
+}
+
 variable "bigquery_data_transfer_query_name" {
   description = "Value of the Name Big Query scheduled query to fetch rows where metric usage is >= threshold"
   type        = string
@@ -279,6 +327,12 @@ variable "retention_days" {
   description = "Log Sink Bucket's retention period in days to detele alert logs"
   type        = number
   default     = 30
+}
+
+variable "app_alert_csv_file_name" {
+  description = "CSV file name to configure app alerts"
+  type        = string
+  default     = "QMS_app_alerting.csv"
 }
 
 variable "qms_deployment_labels" {

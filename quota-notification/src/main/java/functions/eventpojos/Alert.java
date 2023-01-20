@@ -1,5 +1,5 @@
 /*
-Copyright 2022 Google LLC
+Copyright 2023 Google LLC
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package functions.eventpojos;
 public class Alert {
   private String projectId;
   private String region;
-  private String metric;
-  private String usage;
-  private String limit;
-  private Float consumption;
+  private String quotaMetric;
+  private String currentUsage;
+  private String quotaLimit;
+  private Float currentConsumption;
 
   public String getProjectId() {
     return projectId;
@@ -39,46 +39,46 @@ public class Alert {
     this.region = region;
   }
 
-  public String getMetric() {
-    return metric;
+  public String getQuotaMetric() {
+    return quotaMetric;
   }
 
-  public void setMetric(String metric) {
-    this.metric = metric;
+  public void setQuotaMetric(String quotaMetric) {
+    this.quotaMetric = quotaMetric;
   }
 
-  public String getUsage() {
-    return usage;
+  public String getCurrentUsage() {
+    return currentUsage;
   }
 
-  public void setUsage(String usage) {
-    this.usage = usage;
+  public void setCurrentUsage(String currentUsage) {
+    this.currentUsage = currentUsage;
   }
 
-  public String getLimit() {
-    return limit;
+  public String getQuotaLimit() {
+    return quotaLimit;
   }
 
-  public void setLimit(String limit) {
-    this.limit = limit;
+  public void setQuotaLimit(String quotaLimit) {
+    this.quotaLimit = quotaLimit;
   }
 
-  public Float getConsumption() {
-    return consumption;
+  public Float getCurrentConsumption() {
+    return currentConsumption;
   }
 
-  public void setConsumption(Float consumption) {
-    this.consumption = consumption;
+  public void setCurrentConsumption(Float currentConsumption) {
+    this.currentConsumption = currentConsumption;
   }
 
   public String toString(){
     StringBuilder alertBuilder = new StringBuilder();
     alertBuilder.append("|" + projectId);
     alertBuilder.append("|"+region);
-    alertBuilder.append("|`"+metric.replace(".com"," .com")+"`");
+    alertBuilder.append("|`"+ quotaMetric.replace(".com"," .com")+"`");
     //alertBuilder.append("|"+usage);
     //alertBuilder.append("|"+limit);
-    alertBuilder.append("|"+consumption);
+    alertBuilder.append("|"+ currentConsumption);
     return alertBuilder.toString();
   }
 }
