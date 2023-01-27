@@ -435,7 +435,7 @@ Note: In case terraform fails, run terraform plan and terraform apply again
 
 ### 3.10 Data Studio Dashboard setup
 
-1.  Go to the [Data Studio dashboard template](https://datastudio.google.com/c/u/0/reporting/41cc9be3-6a55-4f32-b904-37f63e4f2c75/page/xxWVB).
+1.  Go to the [Data Studio dashboard template](https://lookerstudio.google.com/reporting/961c5118-2503-449a-b592-5c2ff13db099).
     If this link is not accessible, reach out to
     quota-monitoring-solution@google.com to share the dashboard template with your
     email id. A Data Studio dashboard will look like this:
