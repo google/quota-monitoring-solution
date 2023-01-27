@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/google/quota-monitoring-solution/compare/v4.5.1...v5.0.0) (2023-01-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* App Level Alerting along with centralized alerting  ([#61](https://github.com/google/quota-monitoring-solution/issues/61))
+
+### Features
+
+* App Level Alerting along with centralized alerting  ([#61](https://github.com/google/quota-monitoring-solution/issues/61)) ([339a8b6](https://github.com/google/quota-monitoring-solution/commit/339a8b6972f085e944c7b225b1bfc1df0af1f5ff))
+
 ## [4.5.1](https://github.com/google/quota-monitoring-solution/compare/v4.5.0...v4.5.1) (2022-12-30)
 
 
