@@ -21,12 +21,15 @@ import static functions.ConfigureAppAlertHelper.loadCsvFromGcsToBigQuery;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.TableId;
+import com.google.cloud.functions.BackgroundFunction;
+import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import functions.eventpojos.GcsEvent;
 import java.util.logging.Logger;
 
-public class ConfigureAppAlert implements HttpFunction {
+public class ConfigureAppAlert implements BackgroundFunction<GcsEvent> {
   public static final String HOME_PROJECT = System.getenv("HOME_PROJECT");
   public static final String APP_ALERT_DATASET = System.getenv("APP_ALERT_DATASET");
   public static final String APP_ALERT_TABLE = System.getenv("APP_ALERT_TABLE");
@@ -35,9 +38,9 @@ public class ConfigureAppAlert implements HttpFunction {
   private static final Logger logger = Logger.getLogger(ConfigureAppAlert.class.getName());
 
   @Override
-  public void service(HttpRequest request, HttpResponse response)
-      throws Exception {
-    response.getWriter().write("App Notification Configuration starting\n");
+  public void accept(GcsEvent event, Context context) throws Exception {
+    logger.info("App Notification Configuration starting\n");
+
     // Initialize client that will be used to send requests.
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     // Get table

@@ -330,9 +330,11 @@ variable "retention_days" {
 }
 
 variable "app_alert_csv_file_name" {
-  description = "CSV file name to configure app alerts"
+  description = "CSV file name to configure app alerts with project Ids, email Ids and app codes"
   type        = string
-  default     = "QMS_app_alerting.csv"
+  default     = "qms_app_alerting.csv"
 }
+
+
 
 

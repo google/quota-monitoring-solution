@@ -91,29 +91,6 @@ resource "google_cloud_scheduler_job" "job" {
   }
 }
 
-# Cloud scheduler job to invoke config app alert cloud function
-resource "google_cloud_scheduler_job" "app_alert_configure_job" {
-  name             = var.scheduler_app_alert_config_job_name
-  description      = var.scheduler_app_alert_job_description
-  schedule         = var.scheduler_app_alert_job_frequency
-  time_zone        = var.scheduler_cron_job_timezone
-  attempt_deadline = var.scheduler_cron_job_deadline
-  region           = local.expanded_region
-  depends_on       = [module.project-services]
-  retry_config {
-    retry_count = 1
-  }
-
-  http_target {
-    http_method = "POST"
-    uri         = google_cloudfunctions_function.function-configureAppAlert.https_trigger_url
-
-    oidc_token {
-      service_account_email = var.service_account_email
-    }
-  }
-}
-
 resource "google_storage_bucket" "bucket_gcf_source" {
   name          = "${var.project_id}-gcf-source"
   storage_class = "REGIONAL"
@@ -150,6 +127,22 @@ resource "google_storage_bucket_object" "source_code_object" {
     null_resource.source_code_zip,
     data.archive_file.local_source_code_zip
   ]
+}
+
+# Create new bucket for app level configuration csv
+resource "google_storage_bucket" "bucket_app_config" {
+  name          = "${var.project_id}-qms-app-config"
+  storage_class = "REGIONAL"
+  location      = local.expanded_region
+  force_destroy = "true"
+}
+
+# upload app config csv file on GCS bucket
+resource "google_storage_bucket_object" "app_config_csv" {
+  count = fileexists(var.app_alert_csv_file_name) ? 1 : 0
+  name   = var.app_alert_csv_file_name
+  source = var.app_alert_csv_file_name
+  bucket = google_storage_bucket.bucket_app_config.name
 }
 
 # cloud function to list projects
@@ -305,17 +298,21 @@ resource "google_cloudfunctions_function" "function-configureAppAlert" {
   available_memory_mb   = var.cloud_function_config_app_alert_memory
   source_archive_bucket = google_storage_bucket.bucket_gcf_source.name
   source_archive_object = google_storage_bucket_object.source_code_notification_object.name
-  trigger_http          = true
   entry_point           = "functions.ConfigureAppAlert"
   service_account_email = var.service_account_email
   timeout               = var.cloud_function_config_app_alert_timeout
   depends_on            = [module.project-services]
 
+  event_trigger {
+    event_type = "google.storage.object.finalize"
+    resource   = google_storage_bucket.bucket_app_config.name
+  }
+
   environment_variables = {
     HOME_PROJECT  = var.project_id
     APP_ALERT_DATASET = var.big_query_alert_dataset_id
     APP_ALERT_TABLE   = var.big_query_app_alert_table_id
-    CSV_SOURCE_URI = "gs://${google_storage_bucket.bucket_gcf_source.name}/${var.app_alert_csv_file_name}"
+    CSV_SOURCE_URI = "gs://${google_storage_bucket.bucket_app_config.name}/${var.app_alert_csv_file_name}"
   }
 }
 

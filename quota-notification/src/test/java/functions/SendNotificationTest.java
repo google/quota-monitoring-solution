@@ -42,16 +42,14 @@ public class SendNotificationTest {
   @Test
   public void sendNotification_shouldSendEmail() {
     PubSubMessage pubSubMessage = new PubSubMessage();
-    pubSubMessage.setEmailIds("anuradhabajpai@google.com");
+    pubSubMessage.setEmailIds("qms@google.com");
     pubSubMessage.setLimit("100");
     pubSubMessage.setMetric("VPC");
     pubSubMessage.setUsage("80");
     pubSubMessage.setConsumption(80f);
-    /*pubSubMessage.setData(Base64.getEncoder().encodeToString(
-    "anuradha.bajpai@gmail.com,anuradhabajpai@google.com".getBytes(StandardCharsets.UTF_8)));*/
     sampleUnderTest.accept(pubSubMessage, null);
 
     String logMessage = LOG_HANDLER.getStoredLogRecords().get(0).getMessage();
-    assertThat("anuradhabajpai@google.com").isEqualTo(logMessage);
+    assertThat("qms@google.com").isEqualTo(logMessage);
   }
 }

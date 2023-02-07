@@ -85,6 +85,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
       - [3.11.1 Slack Configuration](#3111-slack-configuration)
         - [3.11.1.1 Create Notification Channel](#31111-create-notification-channel)
         - [3.11.1.2 Configuring Alerting Policy](#31112-configuring-alerting-policy)
+    - [Configure Application Level Dashboard and Alerting](README-APP-ALERTING.md)
   - [4. Release Note](#4-release-note)
     - [v4.0.0: Quota Monitoring across GCP services](#v400-quota-monitoring-across-gcp-services)
       - [New](#new)

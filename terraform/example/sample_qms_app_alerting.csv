@@ -1,0 +1,4 @@
+project_id,email_id,app_code,dashboard_url
+quota-monitoring-project-71,app1monitoring@acme.com,app-1,https://lookerstudio.google.com/reporting/961c5118-2503-449a-b592-5c2ff13db099/page/xxWVB
+quota-monitoring-project-72,app2monitoring@acme.com,app-2,https://lookerstudio.google.com/reporting/961c5118-2503-449a-b592-5c2ff13db099/page/xxWVB
+quota-monitoring-project-73,app3monitoring@acme..com,app-3,https://lookerstudio.google.com/reporting/961c5118-2503-449a-b592-5c2ff13db099/page/xxWVB
