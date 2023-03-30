@@ -369,21 +369,20 @@ Account created in the previous step at the Org A:
     cd ./quota-monitorings-solution/terraform/example
     ```
 
-### 3.6 Download Service Account Key File
+### 3.6 Set OAuth Token Using Service Account Impersonization
 
-Create Service Account key from host project A. The service account key file
-will be downloaded to your machine as key.json. After you download the key
-file, you cannot download it again.
+Impersonate your host project service account and set environment variable using temporary token to authenticate terraform. You will need to make sure your user has the [Service Account Token Creator role](https://cloud.google.com/iam/docs/service-account-permissions#token-creator-role) to create short-lived credentials.
 
 ```sh
-gcloud iam service-accounts keys create key.json \
-    --iam-account=$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com
+gcloud config set auth/impersonate_service_account \
+    $SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com
+
+export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 ```
 
 ### 3.7 Configure Terraform
 
 1.  Verify that you have these 4 files in your local directory:
-    *   key.json
     *   main.tf
     *   variables.tf
     *   terraform.tfvars
@@ -418,14 +417,28 @@ gcloud iam service-accounts keys create key.json \
 
 Note: In case terraform fails, run terraform plan and terraform apply again
 
+3.  Stop impersonating service account (when finished with terraform)
+    *   `gcloud config unset auth/impersonate_service_account`
+
 ### 3.9 Testing
 
-1.  Click ‘Run Now’ on Cloud Job scheduler.
+1.  Initiate first job run in Cloud Scheduler.
 
+    #### Console
+
+    Click 'Run Now' on Cloud Job scheduler.
+    
     *Note: The status of the ‘Run Now’ button changes to ‘Running’ for a fraction
     of seconds.*
 
     ![run-cloud-scheduler](img/run_cloud_scheduler.png)
+
+    #### Terminal
+
+    ```sh
+    gcloud scheduler jobs run quota-monitoring-cron-job --location <region>
+    gcloud scheduler jobs run quota-monitoring-app-alert-config --location <region>
+    ```
 
 2.  To verify that the program ran successfully, check the BigQuery Table. The
     time to load data in BigQuery might take a few minutes. The execution time
@@ -443,7 +456,7 @@ Note: In case terraform fails, run terraform plan and terraform apply again
 2.  Make a copy of the template from the copy icon at the top bar (top - right
     corner)
     ![ds-dropdown-copy](img/ds-dropdown-copy.png)
-3.  Click on ‘Copy Report’ button
+3.  Click on ‘Copy Report’ button **without changing datasource options**
     ![ds-copy-report-fixed-new-data-source](img/ds-copy-report-fixed-new-data-source.png)
 4.  This will create a copy of the report and open in Edit mode. If not click on
     ‘Edit’ button on top right corner in copied template:
