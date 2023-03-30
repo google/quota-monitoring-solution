@@ -382,7 +382,7 @@ export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 
 ### 3.7 Configure Terraform
 
-1.  Verify that you have these 4 files in your local directory:
+1.  Verify that you have these 3 files in your local directory:
     *   main.tf
     *   variables.tf
     *   terraform.tfvars
@@ -427,7 +427,7 @@ Note: In case terraform fails, run terraform plan and terraform apply again
     #### Console
 
     Click 'Run Now' on Cloud Job scheduler.
-    
+
     *Note: The status of the ‘Run Now’ button changes to ‘Running’ for a fraction
     of seconds.*
 
