@@ -380,6 +380,22 @@ gcloud config set auth/impersonate_service_account \
 export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 ```
 
+- **TIP**: If you get an error saying *unable to impersonate*, you will need to unset the impersonation. Have the role added similar to below, then try again.
+
+    ```sh
+    # unset impersonation
+    gcloud config unset auth/impersonate_service_account
+
+    # set your current authenticated user as var
+    PROJECT_USER=$(gcloud config get-value core/account)
+
+    # grant IAM role serviceAccountTokenCreator
+    gcloud iam service-accounts add-iam-policy-binding $SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com \
+        --member user:$PROJECT_USER \
+        --role roles/iam.serviceAccountTokenCreator \
+        --condition=None
+    ```
+
 ### 3.7 Configure Terraform
 
 1.  Verify that you have these 3 files in your local directory:
@@ -415,10 +431,12 @@ export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
     *   Enable required APIs
     *   Create all resources and connect them.
 
-Note: In case terraform fails, run terraform plan and terraform apply again
+    Note: In case terraform fails, run terraform plan and terraform apply again
 
 3.  Stop impersonating service account (when finished with terraform)
-    *   `gcloud config unset auth/impersonate_service_account`
+    ```sh
+    gcloud config unset auth/impersonate_service_account
+    ```
 
 ### 3.9 Testing
 
