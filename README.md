@@ -438,6 +438,7 @@ export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
     Note: In case terraform fails, run terraform plan and terraform apply again
 
 3.  Stop impersonating service account (when finished with terraform)
+
     ```sh
     gcloud config unset auth/impersonate_service_account
     ```
