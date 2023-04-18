@@ -79,7 +79,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
     - [3.7 Configure Terraform](#37-configure-terraform)
     - [3.8 Run Terraform](#38-run-terraform)
     - [3.9 Testing](#39-testing)
-    - [3.10 Looker Studio Dashboard setup](#310-data-studio-dashboard-setup)
+    - [3.10 Looker Studio Dashboard setup](#310-looker-studio-dashboard-setup)
     - [3.11 Scheduled Reporting](#311-scheduled-reporting)
     - [3.11 Alerting](#311-alerting)
       - [3.11.1 Slack Configuration](#3111-slack-configuration)
