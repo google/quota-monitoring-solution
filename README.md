@@ -371,10 +371,10 @@ Account created in the previous step at the Org A:
 
 ### 3.6 Set OAuth Token Using Service Account Impersonization
 
-Impersonate your host project service account and set environment variable 
-using temporary token to authenticate terraform. You will need to make 
-sure your user has the 
-[Service Account Token Creator role](https://cloud.google.com/iam/docs/service-account-permissions#token-creator-role) 
+Impersonate your host project service account and set environment variable
+using temporary token to authenticate terraform. You will need to make
+sure your user has the
+[Service Account Token Creator role](https://cloud.google.com/iam/docs/service-account-permissions#token-creator-role)
 to create short-lived credentials.
 
 ```sh
