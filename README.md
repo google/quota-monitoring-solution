@@ -371,7 +371,11 @@ Account created in the previous step at the Org A:
 
 ### 3.6 Set OAuth Token Using Service Account Impersonization
 
-Impersonate your host project service account and set environment variable using temporary token to authenticate terraform. You will need to make sure your user has the [Service Account Token Creator role](https://cloud.google.com/iam/docs/service-account-permissions#token-creator-role) to create short-lived credentials.
+Impersonate your host project service account and set environment variable 
+using temporary token to authenticate terraform. You will need to make 
+sure your user has the 
+[Service Account Token Creator role](https://cloud.google.com/iam/docs/service-account-permissions#token-creator-role) 
+to create short-lived credentials.
 
 ```sh
 gcloud config set auth/impersonate_service_account \
@@ -380,7 +384,7 @@ gcloud config set auth/impersonate_service_account \
 export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 ```
 
-- **TIP**: If you get an error saying *unable to impersonate*, you will need to unset the impersonation. Have the role added similar to below, then try again.
+*   **TIP**: If you get an error saying *unable to impersonate*, you will need to unset the impersonation. Have the role added similar to below, then try again.
 
     ```sh
     # unset impersonation
@@ -442,7 +446,7 @@ export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 
 1.  Initiate first job run in Cloud Scheduler.
 
-    #### Console
+    **Console**
 
     Click 'Run Now' on Cloud Job scheduler.
 
@@ -451,7 +455,7 @@ export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 
     ![run-cloud-scheduler](img/run_cloud_scheduler.png)
 
-    #### Terminal
+    **Terminal**
 
     ```sh
     gcloud scheduler jobs run quota-monitoring-cron-job --location <region>
