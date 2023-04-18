@@ -384,8 +384,9 @@ gcloud config set auth/impersonate_service_account \
 export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 ```
 
-*   **TIP**: If you get an error saying *unable to impersonate*, you will need to unset the 
-impersonation. Have the role added similar to below, then try again.
+*   **TIP**: If you get an error saying *unable to impersonate*, you will 
+need to unset the impersonation. Have the role added similar to below, then 
+try again.
 
     ```sh
     # unset impersonation
