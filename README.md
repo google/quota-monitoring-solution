@@ -1,6 +1,6 @@
 # Quota Monitoring and Alerting
 
-> An easy-to-deploy Data Studio Dashboard with alerting capabilities, showing
+> An easy-to-deploy Looker Studio Dashboard with alerting capabilities, showing
 usage and quota limits in an organization or folder.
 
 Google Cloud enforces [quotas](https://cloud.google.com/docs/quota) on resource
@@ -22,7 +22,7 @@ Google Cloud customers.
 ## 1. Summary
 
 Quota Monitoring Solution is a stand-alone application of an easy-to-deploy
-Data Studio dashboard with alerting capabilities showing all usage and quota
+Looker Studio dashboard with alerting capabilities showing all usage and quota
 limits in an organization or folder.
 
 ### 1.1 Four Initial Features
@@ -51,9 +51,9 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 *   Alerts can be received by Email, Mobile App, PagerDuty, SMS, Slack,
     Webhooks and Pub/Sub. Cloud Monitoring custom log metric has been leveraged to
     create Alerts.
-*   Easy to get started and deploy with Data Studio Dashboard. In addition to
-    Data Studio, other visualization tools can be configured.
-*   The Data Studio report can be scheduled to be emailed to appropriate team
+*   Easy to get started and deploy with Looker Studio Dashboard. In addition to
+    Looker Studio, other visualization tools can be configured.
+*   The Looker Studio report can be scheduled to be emailed to appropriate team
     for weekly/daily reporting.
 
 ## 3. Deployment Guide
@@ -79,7 +79,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
     - [3.7 Configure Terraform](#37-configure-terraform)
     - [3.8 Run Terraform](#38-run-terraform)
     - [3.9 Testing](#39-testing)
-    - [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup)
+    - [3.10 Looker Studio Dashboard setup](#310-data-studio-dashboard-setup)
     - [3.11 Scheduled Reporting](#311-scheduled-reporting)
     - [3.11 Alerting](#311-alerting)
       - [3.11.1 Slack Configuration](#3111-slack-configuration)
@@ -433,12 +433,12 @@ Note: In case terraform fails, run terraform plan and terraform apply again
     like this:
     ![test-bigquery-table](img/test_bigquery_table.png)
 
-### 3.10 Data Studio Dashboard setup
+### 3.10 Looker Studio Dashboard setup
 
-1.  Go to the [Data Studio dashboard template](https://lookerstudio.google.com/reporting/961c5118-2503-449a-b592-5c2ff13db099).
+1.  Go to the [Looker Studio dashboard template](https://lookerstudio.google.com/reporting/f5e179e9-29e1-46c2-a443-97f5e24edd64).
     If this link is not accessible, reach out to
     quota-monitoring-solution@google.com to share the dashboard template with your
-    email id. A Data Studio dashboard will look like this:
+    email id. A Looker Studio dashboard will look like this:
     ![ds-updated-quotas-dashboard](img/ds-updated-quotas-dashboard.png)
 2.  Make a copy of the template from the copy icon at the top bar (top - right
     corner)
@@ -508,8 +508,8 @@ Note: In case terraform fails, run terraform plan and terraform apply again
 
 ### 3.11 Scheduled Reporting
 
-Quota monitoring reports can be scheduled from the Data Studio dashboard using
-‘Schedule email delivery’. The screenshot of the Data studio dashboard will be
+Quota monitoring reports can be scheduled from the Looker Studio dashboard using
+‘Schedule email delivery’. The screenshot of the Looker Studio dashboard will be
 delivered as a pdf report to the configured email Ids.
 
 ![ds-schedule-email-button](img/ds-schedule-email-button.png)
@@ -572,7 +572,7 @@ the specified threshold limit.
 
 *   The new version provides visibility into Quotas across various GCP services
     beyond the original GCE (Compute).
-*   New Data Studio Dashboard template reporting metrics across GCP services
+*   New Looker Studio Dashboard template reporting metrics across GCP services
 
 #### Known Limitations
 
@@ -595,8 +595,8 @@ the specified threshold limit.
     To upgrade existing installations:
 
     *   Re-run the Terraform, to update the Cloud Functions and Scheduled Query
-    *   Update the SQL used in the Data Studio dashboard according to Step #7
-        of [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup).
+    *   Update the SQL used in the Looker Studio dashboard according to Step #7
+        of [3.10 Looker Studio Dashboard setup](#310-data-studio-dashboard-setup).
 
 ## 5. What is Next
 
