@@ -24,11 +24,6 @@ variable "region" {
   type        = string
 }
 
-variable "creds_file" {
-  type = string
-  default = "key.json"
-}
-
 variable "service_account_email" {
   description = "Value of the Service Account"
   type        = string
