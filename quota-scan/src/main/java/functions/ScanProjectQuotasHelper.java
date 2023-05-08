@@ -134,7 +134,8 @@ public class ScanProjectQuotasHelper {
         HashMap<String, Long> aggregatedQuota = null;
 
         // Based on filter provided at https://cloud.google.com/monitoring/alerts/using-quota-metrics#mql-rate-multiple-limits
-        if (data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue().contains("PerDay")) {
+        if (data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue().contains("PerDay") ||
+            data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue().contains("Qpd")) {
           aggregatedQuota = getAggregatedQuota(gcpProject, data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue());
         }
 
@@ -182,7 +183,11 @@ public class ScanProjectQuotasHelper {
         List<PointData> stuffs = tsData.getPointDataList();
 
         for (PointData pointData : stuffs) {
-          if (pointData.getTimeInterval().getStartTime().getSeconds() == endOfDay.toEpochSecond()) {
+         logger.info(String.format("Metric: %s, Current: %d, Max %d, Value %d%n", metric,
+            values.get("current"), values.get("max"), pointData.getValues(0).getInt64Value()));
+
+          // Cloud Monitoring returns UTC timestamps so we need to use end of day UTC to match correctly.
+          if (pointData.getTimeInterval().getEndTime().getSeconds() == ZonedDateTime.of(today, LocalTime.MAX, ZoneId.of("UTC")).toEpochSecond()) {
             values.replace("current", pointData.getValues(0).getInt64Value());
           }
 
