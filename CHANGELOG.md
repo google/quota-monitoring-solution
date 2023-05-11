@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.0.1](https://github.com/google/quota-monitoring-solution/compare/v5.0.0...v5.0.1) (2023-04-26)
+
+
+### Bug Fixes
+
+* Feature/looker studio template public ([#80](https://github.com/google/quota-monitoring-solution/issues/80)) ([4d423e3](https://github.com/google/quota-monitoring-solution/commit/4d423e32b80af4061908704bb8fb89458fabbbbd))
+* Implemented [#67](https://github.com/google/quota-monitoring-solution/issues/67) - use short-lived tokens ([#69](https://github.com/google/quota-monitoring-solution/issues/69)) ([d08475a](https://github.com/google/quota-monitoring-solution/commit/d08475a622b82d21cb125a35571720fb69fe53d3))
+
 ## [5.0.0](https://github.com/google/quota-monitoring-solution/compare/v4.5.1...v5.0.0) (2023-01-18)
 
 
