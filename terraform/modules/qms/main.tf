@@ -434,6 +434,7 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   schedule                  = var.Alert_data_scanning_frequency
   notification_pubsub_topic = google_pubsub_topic.topic_alert_notification.id
   destination_dataset_id    = google_bigquery_dataset.quota_usage_alert_dataset.dataset_id
+  service_account_name      = var.service_account_email
   depends_on                = [module.project-services]
   params = {
     destination_table_name_template = var.big_query_alert_table_id
