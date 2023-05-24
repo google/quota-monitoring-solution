@@ -17,7 +17,7 @@ Copyright 2022 Google LLC
 variable "qms_version" {
   description = "Quota monitoring solution version to deploy"
   type        = string
-  default     = "v5.0.1" #x-release-please-version
+  default     = "v5.0.2" #x-release-please-version
 }
 
 variable "project_id" {

@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.2](https://github.com/google/quota-monitoring-solution/compare/v5.0.1...v5.0.2) (2023-05-22)
+
+
+### Bug Fixes
+
+* Add quotes to BQ table location ([#84](https://github.com/google/quota-monitoring-solution/issues/84)) ([dcd52c3](https://github.com/google/quota-monitoring-solution/commit/dcd52c30918a5293a07c163158f24faa4456c216))
+
 ## [5.0.1](https://github.com/google/quota-monitoring-solution/compare/v5.0.0...v5.0.1) (2023-04-26)
 
 
