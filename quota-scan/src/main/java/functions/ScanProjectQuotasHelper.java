@@ -66,23 +66,55 @@ public class ScanProjectQuotasHelper {
   "| join" +
   "| value [current: val(0), maximum: val(1), limit: val(2)]";
 
+  // MQL to fetch rate quotas on a per minute basis
   public static final String MQL_RATE_ALL = "fetch consumer_quota" +
   "| { current: metric serviceruntime.googleapis.com/quota/rate/net_usage" +
   "    | filter resource.project_id = '%1$s'" +
-  "    | align next_older(1w)" +
-  "    | every 1w" +
+  "    | align next_older(1m)" +
+  "    | every 1m" +
+  "    | within 1w" +
   "  ; maximum: metric serviceruntime.googleapis.com/quota/rate/net_usage" +
   "    | filter resource.project_id = '%1$s'" +
-  "    | group_by 1w, [value_usage_max: max(value.net_usage)]" +
-  "    | every 1w" +
+  "    | group_by 1m, [value_usage_max: max(value.net_usage)]" +
+  "    | every 1m" +
+  "    | within 1w" +
   "  ; limit: metric 'serviceruntime.googleapis.com/quota/limit'" +
   "    | filter resource.project_id = '%1$s'" +
-  "    | align next_older(1w)" +
-  "    | every 1w" +
+  "    | align next_older(1m)" +
+  "    | every 1m" +
+  "    | within 1w" +
   "    }" +
   "| join" +
   "| value [current: val(0), maximum: val(1), limit: val(2)]";
-  
+
+  // MQL to fetch rate quotas on a per second basis
+  public static final String MQL_RATE_QPS = "fetch consumer_quota" +
+  "| { current:" +
+  "      metric serviceruntime.googleapis.com/quota/rate/net_usage" +
+  "      | filter" +
+  "          resource.project_id = '%1$s' &&" +
+  "          metric.quota_metric == '%2$s'" +
+  "      | every 1s" +
+  "      | within 1w" +
+  "  ; maximum:" +
+  "      metric serviceruntime.googleapis.com/quota/rate/net_usage" +
+  "      | filter" +
+  "          resource.project_id = '%1$s' &&" +
+  "          metric.quota_metric == '%2$s'" +
+  "      | group_by 1s, [value_usage_max: max(value.net_usage)]" +
+  "      | every 1s" +
+  "      | within 1w" +
+  "  ; limit:" +
+  "      metric serviceruntime.googleapis.com/quota/limit" +
+  "      | filter" +
+  "          resource.project_id = '%1$s' &&" +
+  "          metric.quota_metric == '%2$s'" +
+  "      | every 1s" +
+  "      | within 1w" +
+  " }" +
+  "| value [current: val(0), maximum: val(1), limit: val(2)]";
+
+  // MQL to get the usage aggregated on a daily basis
   public static final String MQL_RATE_QPD = "fetch consumer_quota" +
   "| { daily:" +
   "      metric serviceruntime.googleapis.com/quota/rate/net_usage" +
@@ -131,15 +163,17 @@ public class ScanProjectQuotasHelper {
       QueryTimeSeriesPagedResponse response = queryServiceClient.queryTimeSeries(request);
       HashMap<String, Integer> indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
       for (TimeSeriesData data : response.iterateAll()) {
-        HashMap<String, Long> aggregatedQuota = null;
-
-        // Based on filter provided at https://cloud.google.com/monitoring/alerts/using-quota-metrics#mql-rate-multiple-limits
         if (data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue().contains("PerDay") ||
             data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue().contains("Qpd")) {
-          aggregatedQuota = getAggregatedQuota(gcpProject, data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue());
+          // Based on filter provided at https://cloud.google.com/monitoring/alerts/using-quota-metrics#mql-rate-multiple-limits
+          HashMap<String, Long> aggregatedQuota = getAggregatedQuota(gcpProject, data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue());
+          projectQuotas.add(populateProjectQuota(data, aggregatedQuota, ts, indexMap, quota));
+        } else if (data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue().contains("GoogleEgressBandwidth")) {
+          // Get quotas that are tracked on a per second basis
+          projectQuotas.add(getPerSecondQuota(gcpProject, data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue()));
+        } else {
+          projectQuotas.add(populateProjectQuota(data, null, ts, indexMap, quota));
         }
-
-        projectQuotas.add(populateProjectQuota(data, aggregatedQuota, ts, indexMap, quota));
       }
     } catch (IOException e) {
       logger.log(
@@ -151,6 +185,34 @@ public class ScanProjectQuotasHelper {
     }
 
     return projectQuotas;
+  }
+
+  private static ProjectQuota getPerSecondQuota(GCPProject gcpProject, String metric) {
+    ProjectQuota projectQuota = null;
+
+    try (QueryServiceClient queryServiceClient = QueryServiceClient.create()) {
+      QueryTimeSeriesRequest request =
+          QueryTimeSeriesRequest.newBuilder()
+              .setName(gcpProject.getProjectName())
+              .setQuery(String.format(MQL_RATE_QPS, gcpProject.getProjectId(), metric))
+              .build();
+
+      Timestamp ts = Timestamp.now();
+      QueryTimeSeriesPagedResponse response = queryServiceClient.queryTimeSeries(request);
+      HashMap<String, Integer> indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
+      for (TimeSeriesData data : response.iterateAll()) {
+        projectQuota = populateProjectQuota(data, null, ts, indexMap, Quotas.RATE);
+      }
+    } catch (IOException e) {
+      logger.log(
+          Level.SEVERE,
+          "Error fetching timeseries data for project: "
+              + gcpProject.getProjectName()
+              + e.getMessage(),
+          e);
+    }
+
+    return projectQuota;
   }
 
   private static HashMap<String, Long> getAggregatedQuota(GCPProject gcpProject, String metric) {
