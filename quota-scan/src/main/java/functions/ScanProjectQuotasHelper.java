@@ -221,7 +221,7 @@ public class ScanProjectQuotasHelper {
         String key = data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue() + data.getLabelValues(indexMap.get("resource.location")).getStringValue();
         projectQuotas.put(key, populateProjectQuota(data, null, ts, indexMap, Quotas.RATE));   
       }
-
+/*
       for (int i=1; i<=6; i++) {
         mql =
           String.format(MQL_RATE_QPS,
@@ -257,6 +257,7 @@ public class ScanProjectQuotasHelper {
           }
         }
       }
+      */
     } catch (IOException e) {
       logger.log(
           Level.SEVERE,
