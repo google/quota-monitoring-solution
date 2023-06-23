@@ -97,14 +97,16 @@ public class ScanProjectQuotasHelper {
   "      | filter" +
   "          resource.project_id = '%1$s'" +
   "      | every 1s" +
-  "      | within 1d, d'%2$s'" +
+  //"      | within 1d, d'%2$s'" +
+  "      | within 1d" +
   "  ; maximum:" +
   "      metric serviceruntime.googleapis.com/quota/rate/net_usage" +
   "      | filter" +
   "          resource.project_id = '%1$s'" +
   "      | group_by 1d, [value_usage_max: max(value.net_usage)]" +
   "      | every 1s" +
-  "      | within 1d, d'%2$s'" +
+  //"      | within 1d, d'%2$s'" +
+  "      | within 1d" +
   "  ; limit:" +
   "      metric serviceruntime.googleapis.com/quota/limit" +
   "      | filter" +
@@ -113,7 +115,8 @@ public class ScanProjectQuotasHelper {
   "              || metric.limit_name =~ '.*EGRESS-BANDWIDTH.*')" +
   "      | align next_older(1m)" +
   "      | every 1s" +
-  "      | within 1d, d'%2$s'" +
+  //"      | within 1d, d'%2$s'" +
+  "      | within 1d" +
   " }" +
   "| join" + 
   "| value [current: val(0), maximum: val(1), limit: val(2)]";
@@ -202,11 +205,11 @@ public class ScanProjectQuotasHelper {
     HashMap<String, ProjectQuota> projectQuotas = new HashMap<>();
 
     try (QueryServiceClient queryServiceClient = QueryServiceClient.create()) {
-      ZonedDateTime now = ZonedDateTime.now();
+      //ZonedDateTime now = ZonedDateTime.now();
       String mql =
           String.format(MQL_RATE_QPS,
-              gcpProject.getProjectId(),
-              now.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
+              gcpProject.getProjectId() //,
+              //now.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
           );
 
       QueryTimeSeriesRequest request =
