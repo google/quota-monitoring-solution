@@ -66,35 +66,80 @@ public class ScanProjectQuotasHelper {
   "| join" +
   "| value [current: val(0), maximum: val(1), limit: val(2)]";
 
-  public static final String MQL_RATE_ALL = "fetch consumer_quota" +
+  // MQL to fetch rate quotas on a per minute basis
+  public static final String MQL_RATE_QPM = "fetch consumer_quota" +
   "| { current: metric serviceruntime.googleapis.com/quota/rate/net_usage" +
   "    | filter resource.project_id = '%1$s'" +
-  "    | align next_older(1w)" +
-  "    | every 1w" +
+  "    | every 1m" +
+  "    | within 1w" +
   "  ; maximum: metric serviceruntime.googleapis.com/quota/rate/net_usage" +
   "    | filter resource.project_id = '%1$s'" +
   "    | group_by 1w, [value_usage_max: max(value.net_usage)]" +
-  "    | every 1w" +
+  "    | every 1m" +
+  "    | within 1w" +
   "  ; limit: metric 'serviceruntime.googleapis.com/quota/limit'" +
   "    | filter resource.project_id = '%1$s'" +
-  "    | align next_older(1w)" +
-  "    | every 1w" +
+  "      && !(metric.limit_name =~ '.*GoogleEgressBandwidth.*'" +
+  "        || metric.limit_name =~ '.*EGRESS-BANDWIDTH.*'" +
+  "        || metric.limit_name =~ '.*PerDay.*'" +
+  "        || metric.limit_name =~ '.*Qpd.*')" +
+  "    | align next_older(1m)" +
+  "    | every 1m" +
+  "    | within 1w" +
   "    }" +
   "| join" +
   "| value [current: val(0), maximum: val(1), limit: val(2)]";
-  
+
+  // MQL to fetch rate quotas on a per second basis
+  public static final String MQL_RATE_QPS = "fetch consumer_quota" +
+  "| { current:" +
+  "      metric serviceruntime.googleapis.com/quota/rate/net_usage" +
+  "      | filter" +
+  "          resource.project_id = '%1$s'" +
+  "      | every 1s" +
+  "      | within 1d" +
+  "  ; maximum:" +
+  "      metric serviceruntime.googleapis.com/quota/rate/net_usage" +
+  "      | filter" +
+  "          resource.project_id = '%1$s'" +
+  "      | group_by 1d, [value_usage_max: max(value.net_usage)]" +
+  "      | every 1s" +
+  "      | within 1d" +
+  "  ; limit:" +
+  "      metric serviceruntime.googleapis.com/quota/limit" +
+  "      | filter" +
+  "          resource.project_id = '%1$s'" +
+  "          && (metric.limit_name =~ '.*GoogleEgressBandwidth.*'" +
+  "              || metric.limit_name =~ '.*EGRESS-BANDWIDTH.*')" +
+  "      | align next_older(1m)" +
+  "      | every 1s" +
+  "      | within 1d" +
+  " }" +
+  "| join" + 
+  "| value [current: val(0), maximum: val(1), limit: val(2)]";
+
+  // MQL to get the usage aggregated on a daily basis
+  // Based on filter provided at https://cloud.google.com/monitoring/alerts/using-quota-metrics#mql-rate-multiple-limits
   public static final String MQL_RATE_QPD = "fetch consumer_quota" +
   "| { daily:" +
   "      metric serviceruntime.googleapis.com/quota/rate/net_usage" +
   "      | filter" +
   "          resource.project_id = '%1$s'" +
-  "          &&" +
-  "          metric.quota_metric" +
-  "          == '%2$s'" +
   "      | group_by 1d, [value_usage_sum: sum(value.net_usage)]" +
   "      | every 1d" +
-  "      | within 1w, d'%3$s' }" +
-  "| value [daily: val(0)]";
+  "      | within 1w, d'%2$s'" +
+  "  ; limit:" +
+  "      metric serviceruntime.googleapis.com/quota/limit" +
+  "      | filter" +
+  "          resource.project_id = '%1$s'" +
+  "          && (metric.limit_name =~ '.*PerDay.*'" +
+  "              || metric.limit_name =~ '.*Qpd.*')" +
+  "      | align next_older(1d)" +
+  "      | every 1d" +
+  "      | within 1w, d'%2$s'" +
+  " }" +
+  "| join" +
+  "| value [daily: val(0), limit: val(1)]";
 
   enum Quotas {
     ALLOCATION,
@@ -131,16 +176,16 @@ public class ScanProjectQuotasHelper {
       QueryTimeSeriesPagedResponse response = queryServiceClient.queryTimeSeries(request);
       HashMap<String, Integer> indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
       for (TimeSeriesData data : response.iterateAll()) {
-        HashMap<String, Long> aggregatedQuota = null;
-
-        // Based on filter provided at https://cloud.google.com/monitoring/alerts/using-quota-metrics#mql-rate-multiple-limits
-        if (data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue().contains("PerDay") ||
-            data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue().contains("Qpd")) {
-          aggregatedQuota = getAggregatedQuota(gcpProject, data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue());
-        }
-
-        projectQuotas.add(populateProjectQuota(data, aggregatedQuota, ts, indexMap, quota));
+          projectQuotas.add(populateProjectQuota(data, null, ts, indexMap, quota));
       }
+
+      // Get the QPD and QPS quotas
+      if(quota == Quotas.RATE) {
+        projectQuotas.addAll(getPerDayQuota(gcpProject, ts));
+        
+        projectQuotas.addAll(getPerSecondQuota(gcpProject, ts));
+      }
+
     } catch (IOException e) {
       logger.log(
           Level.SEVERE,
@@ -153,7 +198,41 @@ public class ScanProjectQuotasHelper {
     return projectQuotas;
   }
 
-  private static HashMap<String, Long> getAggregatedQuota(GCPProject gcpProject, String metric) {
+  private static List<ProjectQuota> getPerSecondQuota(GCPProject gcpProject, Timestamp ts) {
+    HashMap<String, ProjectQuota> projectQuotas = new HashMap<>();
+
+    try (QueryServiceClient queryServiceClient = QueryServiceClient.create()) {
+      String mql =
+          String.format(MQL_RATE_QPS,
+              gcpProject.getProjectId()
+          );
+
+      QueryTimeSeriesRequest request =
+          QueryTimeSeriesRequest.newBuilder()
+              .setName(gcpProject.getProjectName())
+              .setQuery(mql)
+              .build();
+
+      QueryTimeSeriesPagedResponse response = queryServiceClient.queryTimeSeries(request);
+      HashMap<String, Integer> indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
+      for (TimeSeriesData data : response.iterateAll()) {
+        String key = data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue() + data.getLabelValues(indexMap.get("resource.location")).getStringValue();
+        projectQuotas.put(key, populateProjectQuota(data, null, ts, indexMap, Quotas.RATE));   
+      }
+    } catch (IOException e) {
+      logger.log(
+          Level.SEVERE,
+          "Error fetching timeseries data for project: "
+              + gcpProject.getProjectName()
+              + e.getMessage(),
+          e);
+    }
+
+    return new ArrayList<ProjectQuota>(projectQuotas.values());
+  }
+
+  private static List<ProjectQuota> getPerDayQuota(GCPProject gcpProject, Timestamp ts) {
+    List<ProjectQuota> projectQuotas = new ArrayList<>();
     HashMap<String, Long> values = new HashMap<>() {{
       put("current", (long) 0);
       put("max", (long) 0);
@@ -168,7 +247,6 @@ public class ScanProjectQuotasHelper {
       String mql =
           String.format(MQL_RATE_QPD,
               gcpProject.getProjectId(),
-              metric,
               endOfDay.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
           );
 
@@ -179,12 +257,15 @@ public class ScanProjectQuotasHelper {
               .build();
 
       QueryTimeSeriesPagedResponse response = queryServiceClient.queryTimeSeries(request);
-      for (TimeSeriesData tsData : response.iterateAll()) {
-        List<PointData> stuffs = tsData.getPointDataList();
+      HashMap<String, Integer> indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
+      for (TimeSeriesData data : response.iterateAll()) {
+        List<PointData> stuffs = data.getPointDataList();
 
         for (PointData pointData : stuffs) {
-         logger.info(String.format("Metric: %s, Current: %d, Max %d, Value %d%n", metric,
-            values.get("current"), values.get("max"), pointData.getValues(0).getInt64Value()));
+         logger.info(String.format("Metric: %s, Current: %d, Max %d, Value %d%n", 
+            data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue(),
+            values.get("current"), values.get("max"),
+            pointData.getValues(0).getInt64Value()));
 
           // Cloud Monitoring returns UTC timestamps so we need to use end of day UTC to match correctly.
           if (pointData.getTimeInterval().getEndTime().getSeconds() == ZonedDateTime.of(today, LocalTime.MAX, ZoneId.of("UTC")).toEpochSecond()) {
@@ -195,6 +276,8 @@ public class ScanProjectQuotasHelper {
             values.replace("max", pointData.getValues(0).getInt64Value());
           }
         }
+
+        projectQuotas.add(populateProjectQuota(data, values, ts, indexMap, Quotas.RATE));
       }
     } catch (IOException e) {
       logger.log(
@@ -205,7 +288,7 @@ public class ScanProjectQuotasHelper {
           e);
     }
 
-    return values;
+    return projectQuotas;
   }
 
   private static HashMap<String, Integer> buildIndexMap(TimeSeriesDescriptor labels) {
@@ -259,7 +342,7 @@ public class ScanProjectQuotasHelper {
         mql = MQL_ALLOCATION_ALL;
         break;
       case RATE:
-        mql = MQL_RATE_ALL;
+        mql = MQL_RATE_QPM;
         break;
       default:
         mql = "";
