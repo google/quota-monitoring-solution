@@ -97,7 +97,6 @@ public class ScanProjectQuotasHelper {
   "      | filter" +
   "          resource.project_id = '%1$s'" +
   "      | every 1s" +
-  //"      | within 1d, d'%2$s'" +
   "      | within 1d" +
   "  ; maximum:" +
   "      metric serviceruntime.googleapis.com/quota/rate/net_usage" +
@@ -105,7 +104,6 @@ public class ScanProjectQuotasHelper {
   "          resource.project_id = '%1$s'" +
   "      | group_by 1d, [value_usage_max: max(value.net_usage)]" +
   "      | every 1s" +
-  //"      | within 1d, d'%2$s'" +
   "      | within 1d" +
   "  ; limit:" +
   "      metric serviceruntime.googleapis.com/quota/limit" +
@@ -115,7 +113,6 @@ public class ScanProjectQuotasHelper {
   "              || metric.limit_name =~ '.*EGRESS-BANDWIDTH.*')" +
   "      | align next_older(1m)" +
   "      | every 1s" +
-  //"      | within 1d, d'%2$s'" +
   "      | within 1d" +
   " }" +
   "| join" + 
@@ -205,11 +202,9 @@ public class ScanProjectQuotasHelper {
     HashMap<String, ProjectQuota> projectQuotas = new HashMap<>();
 
     try (QueryServiceClient queryServiceClient = QueryServiceClient.create()) {
-      //ZonedDateTime now = ZonedDateTime.now();
       String mql =
           String.format(MQL_RATE_QPS,
-              gcpProject.getProjectId() //,
-              //now.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
+              gcpProject.getProjectId()
           );
 
       QueryTimeSeriesRequest request =
@@ -224,43 +219,6 @@ public class ScanProjectQuotasHelper {
         String key = data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue() + data.getLabelValues(indexMap.get("resource.location")).getStringValue();
         projectQuotas.put(key, populateProjectQuota(data, null, ts, indexMap, Quotas.RATE));   
       }
-/*
-      for (int i=1; i<=6; i++) {
-        mql =
-          String.format(MQL_RATE_QPS,
-              gcpProject.getProjectId(),
-              now.minusDays(i).format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
-          );
-
-        request =
-            QueryTimeSeriesRequest.newBuilder()
-                .setName(gcpProject.getProjectName())
-                .setQuery(mql)
-                .build();
-
-        response = queryServiceClient.queryTimeSeries(request);
-        indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
-        for (TimeSeriesData data : response.iterateAll()) {
-          String key = data.getLabelValues(indexMap.get("metric.limit_name")).getStringValue() + data.getLabelValues(indexMap.get("resource.location")).getStringValue();
-          
-          if (projectQuotas.containsKey(key)) {
-            // If we already have data points, then see if there is a new max
-            ProjectQuota temp = projectQuotas.get(key);
-            if (temp.getMaxUsage() < data.getPointData(0).getValues(indexMap.get("maximum")).getInt64Value()) {
-              temp.setMaxUsage(data.getPointData(0).getValues(indexMap.get("maximum")).getInt64Value());
-              projectQuotas.put(key, temp);
-            }
-          }
-          else {
-            // If there isn't already a data point stored, create a new project quota and set the current usage
-            // to 0. The actual current values should have been found in the first loop.
-            ProjectQuota temp = populateProjectQuota(data, null, ts, indexMap, Quotas.RATE);
-            temp.setCurrentUsage((long) 0);
-            projectQuotas.put(key, temp);
-          }
-        }
-      }
-      */
     } catch (IOException e) {
       logger.log(
           Level.SEVERE,
