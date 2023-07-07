@@ -519,7 +519,7 @@ EOF
 resource "google_logging_metric" "quota_logging_metric" {
   name        = "resource_usage"
   description = "Tracks logs for quota usage above threshold"
-  filter      = "logName:\"projects/${var.project_id}/logs/\" jsonPayload.message:\"|ProjectId | Scope |\""
+  filter      = "logName:\"projects/${var.project_id}/logs/\" jsonPayload.message:\"ProjectId | Scope |\""
   depends_on  = [module.project-services]
   metric_descriptor {
     metric_kind = "DELTA"
