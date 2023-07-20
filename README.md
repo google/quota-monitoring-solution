@@ -474,9 +474,7 @@ try again.
 ### 3.10 Looker Studio Dashboard setup
 
 1.  Go to the [Looker Studio dashboard template](https://lookerstudio.google.com/reporting/f5e179e9-29e1-46c2-a443-97f5e24edd64).
-    If this link is not accessible, reach out to
-    quota-monitoring-solution@google.com to share the dashboard template with your
-    email id. A Looker Studio dashboard will look like this:
+    A Looker Studio dashboard will look like this:
     ![ds-updated-quotas-dashboard](img/ds-updated-quotas-dashboard.png)
 2.  Make a copy of the template from the copy icon at the top bar (top - right
     corner)
@@ -642,6 +640,13 @@ the specified threshold limit.
 2.  Search project, folder, org, region
 3.  Threshold configurable for each metric
 
-## 5. Contact Us
+## 6. Getting Support
 
-For any comments, issues or feedback, please reach out to us at quota-monitoring-solution@google.com
+Quota Monitoring Solution is a project based on open source contributions. We'd
+love for you to [report issues, file feature requests][new-issue], and
+[send pull requests][new-pr] (see [Contributing](README.md#contributing)). Quota
+Monitoring Solution is not officially covered by the Google Cloud product support.
+
+
+[new-issue]: https://github.com/google/quota-monitoring-solution/issues/new
+[new-pr]: https://github.com/google/quota-monitoring-solution/compare
