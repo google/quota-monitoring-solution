@@ -653,7 +653,6 @@ Monitoring Solution is not officially covered by the Google Cloud product suppor
 *   [Contributing guidelines][contributing-guidelines]
 *   [Code of conduct][code-of-conduct]
 
-
 <!-- LINKS: https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
 [code-of-conduct]: code-of-conduct.md
