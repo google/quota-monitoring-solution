@@ -93,6 +93,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
       - [New in v4.4.0](#new-in-v440)
   - [5. What is Next](#5-what-is-next)
   - [6. Getting Support](#6-getting-support)
+  - [7. Contributing](#7-contributing)
 <!-- markdownlint-restore -->
 
 ### 3.1 Prerequisites
@@ -644,8 +645,18 @@ the specified threshold limit.
 
 Quota Monitoring Solution is a project based on open source contributions. We'd
 love for you to [report issues, file feature requests][new-issue], and
-[send pull requests][new-pr] (see [Contributing](README.md#contributing)). Quota
+[send pull requests][new-pr] (see [Contributing](README.md#7-contributing)). Quota
 Monitoring Solution is not officially covered by the Google Cloud product support.
 
+## 7. Contributing
+
+*   [Contributing guidelines][contributing-guidelines]
+*   [Code of conduct][code-of-conduct]
+
+
+<!-- LINKS: https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
+[code-of-conduct]: code-of-conduct.md
+[contributing-guidelines]: CONTRIBUTING.md
 [new-issue]: https://github.com/google/quota-monitoring-solution/issues/new
 [new-pr]: https://github.com/google/quota-monitoring-solution/compare
