@@ -14,6 +14,12 @@ Copyright 2022 Google LLC
    limitations under the License.
 */
 
+terraform {
+  provider_meta "google" {
+    module_name = "cloud-solutions/quota-monitoring-solution-deploy-v5.0" #x-release-please-version
+  }
+}
+
 locals {
   expanded_region    = var.region == "us-central" || var.region == "europe-west" ? "${var.region}1" : var.region
   use_github_release = var.qms_version != "main" ? true : false
