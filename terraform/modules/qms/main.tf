@@ -16,7 +16,7 @@ Copyright 2022 Google LLC
 
 terraform {
   provider_meta "google" {
-    module_name = "cloud-solutions/quota-monitoring-solution-deploy-v5.0" #x-release-please-minor
+    module_name = "cloud-solutions/quota-monitoring-solution-deploy-v5.1" #x-release-please-minor
   }
 }
 
