@@ -52,6 +52,7 @@ import java.util.logging.Level;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.threeten.bp.Duration;
 
 /*
@@ -75,6 +76,7 @@ public class ListProjects implements HttpFunction {
    * */
   @Override
   public void service(HttpRequest request, HttpResponse response) throws IOException {
+
     String projectId = request.getFirstQueryParameter("projectId").orElse(HOME_PROJECT_ID);
     String threshold = request.getFirstQueryParameter("threshold").orElse(THRESHOLD);
     request.getQueryParameters();
@@ -92,8 +94,10 @@ public class ListProjects implements HttpFunction {
       if (requestJson != null && requestJson.has("organizations")) {
         projectId = requestJson.get("projectId").getAsString();
       }
+      MDC.put("severity", "INFO");
       logger.info("Publishing message to topic: " + TOPIC_NAME);
       logger.info("ProjectId: " + projectId);
+      MDC.remove("severity");
 
       ByteString byteStr = ByteString.copyFrom(HOME_PROJECT_ID, StandardCharsets.UTF_8);
       PubsubMessage pubsubApiMessage = PubsubMessage.newBuilder().setData(byteStr).build();
@@ -105,12 +109,14 @@ public class ListProjects implements HttpFunction {
       List<String> projectIds = getProjectIds();
       publishMessages(projectIds);
     } catch (JsonParseException e) {
+      MDC.put("severity", "ERROR");
       logger.error("Error parsing JSON: " + e.getMessage());
     } catch (InterruptedException | ExecutionException | GeneralSecurityException e) {
+      MDC.put("severity", "ERROR");
       logger.error("Error publishing Pub/Sub message: " + e.getMessage(), e);
       responseMessage = "Error publishing Pub/Sub message; see logs for more info.";
     }
-
+    MDC.remove("severity");
     var writer = new PrintWriter(response.getWriter());
     writer.printf("projectId: %s!", HOME_PROJECT_ID);
     writer.printf("publish response: %s!", responseMessage);
@@ -131,10 +137,12 @@ public class ListProjects implements HttpFunction {
       if (projectsResponse.getProjects() == null) {
         continue;
       }
+      MDC.put("severity", "INFO");
       for (Project project : projectsResponse.getProjects()) {
         projectIds.add(project.getProjectId());
         logger.info("Received Project Id: " + project.getProjectId());
       }
+      MDC.remove("severity");
       request.setPageToken(projectsResponse.getNextPageToken());
     } while (projectsResponse.getNextPageToken() != null);
     return projectIds;
@@ -181,9 +189,9 @@ public class ListProjects implements HttpFunction {
     } finally {
       // Wait on any pending publish requests.
       List<String> messageIds = ApiFutures.allAsList(messageIdFutures).get();
-
+      MDC.put("severity", "INFO");
       logger.info("Published " + messageIds.size() + " messages with batch settings.");
-
+      MDC.remove("severity");
       if (publisher != null) {
         // When finished with the publisher, shutdown to free up resources.
         publisher.shutdown();
