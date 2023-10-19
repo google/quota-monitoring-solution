@@ -97,7 +97,6 @@ public class ListProjects implements HttpFunction {
       MDC.put("severity", "INFO");
       logger.info("Publishing message to topic: " + TOPIC_NAME);
       logger.info("ProjectId: " + projectId);
-      MDC.remove("severity");
 
       ByteString byteStr = ByteString.copyFrom(HOME_PROJECT_ID, StandardCharsets.UTF_8);
       PubsubMessage pubsubApiMessage = PubsubMessage.newBuilder().setData(byteStr).build();
@@ -142,7 +141,6 @@ public class ListProjects implements HttpFunction {
         projectIds.add(project.getProjectId());
         logger.info("Received Project Id: " + project.getProjectId());
       }
-      MDC.remove("severity");
       request.setPageToken(projectsResponse.getNextPageToken());
     } while (projectsResponse.getNextPageToken() != null);
     return projectIds;
@@ -191,7 +189,6 @@ public class ListProjects implements HttpFunction {
       List<String> messageIds = ApiFutures.allAsList(messageIdFutures).get();
       MDC.put("severity", "INFO");
       logger.info("Published " + messageIds.size() + " messages with batch settings.");
-      MDC.remove("severity");
       if (publisher != null) {
         // When finished with the publisher, shutdown to free up resources.
         publisher.shutdown();
