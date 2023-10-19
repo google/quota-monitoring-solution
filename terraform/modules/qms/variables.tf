@@ -109,7 +109,7 @@ variable "scheduler_app_alert_job_frequency" {
 variable "source_code_base_url" {
   description = "Base URL to use when downloading source code for QMS Cloud Functions"
   type        = string
-  default     = "https://github.com/ypenn21/quota-monitoring-solution/releases/download/"
+  default     = "https://github.com/google/quota-monitoring-solution/releases/download/"
 }
 
 variable "source_code_zip" {
