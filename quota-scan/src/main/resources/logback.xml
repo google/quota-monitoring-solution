@@ -10,8 +10,8 @@
                 <version>[ignore]</version>
                 <logger>[ignore]</logger>
                 <thread>[ignore]</thread>
-                <level>[ignore]</level>
-                <levelValue>[ignore]</levelValue>
+<!--                <level>[ignore]</level>-->
+<!--                <levelValue>[ignore]</levelValue>-->
             </fieldNames>
         </encoder>
     </appender>
