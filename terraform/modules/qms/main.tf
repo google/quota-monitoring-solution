@@ -125,6 +125,7 @@ resource "google_storage_bucket" "bucket_gcf_source" {
   storage_class = "REGIONAL"
   location      = local.expanded_region
   force_destroy = "true"
+  uniform_bucket_level_access = "true"
 }
 
 data "archive_file" "local_source_code_zip" {
