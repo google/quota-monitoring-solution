@@ -24,16 +24,16 @@ import functions.eventpojos.GCPProject;
 import functions.eventpojos.GCPResourceClient;
 import functions.eventpojos.PubSubMessage;
 import functions.eventpojos.ProjectQuota;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ScanProjectQuotas implements BackgroundFunction<PubSubMessage> {
-  private static final Logger logger = Logger.getLogger(ScanProjectQuotas.class.getName());
+  private static final Logger logger = LoggerFactory.getLogger(ScanProjectQuotas.class);
 
   // Cloud Function Environment variable for Threshold
   public static final String THRESHOLD = System.getenv("THRESHOLD");
@@ -48,7 +48,7 @@ public class ScanProjectQuotas implements BackgroundFunction<PubSubMessage> {
   @Override
   public void accept(PubSubMessage message, Context context) {
     if (message.getData() == null) {
-      logger.log(Level.WARNING, "No Project Id provided");
+      logger.warn( "No Project Id provided");
       return;
     }
     // project Id received from Pub/Sub topic
@@ -67,7 +67,7 @@ public class ScanProjectQuotas implements BackgroundFunction<PubSubMessage> {
       // 2. Scan Rate quotas and load in main table
       getRateUsageQuotas(gcpResourceClient, gcpProject);
     } catch (Exception e) {
-      logger.log(Level.SEVERE, " " + e.getMessage(), e);
+      logger.error( " " + e.getMessage(), e);
     }
   }
 
@@ -83,7 +83,7 @@ public class ScanProjectQuotas implements BackgroundFunction<PubSubMessage> {
         ScanProjectQuotasHelper.Quotas.ALLOCATION
       );
     } catch (IOException e) {
-      logger.log(Level.SEVERE, "Error fetching Allocation usage quotas " + e.getMessage(), e);
+      logger.error("Error fetching Allocation usage quotas " + e.getMessage(), e);
     }
   }
 
@@ -99,7 +99,7 @@ public class ScanProjectQuotas implements BackgroundFunction<PubSubMessage> {
         ScanProjectQuotasHelper.Quotas.RATE
       );
     } catch (IOException e) {
-      logger.log(Level.SEVERE, "Error fetching Rate usage quotas  " + e.getMessage(), e);
+      logger.error("Error fetching Rate usage quotas  " + e.getMessage(), e);
     }
   }
 
@@ -113,7 +113,6 @@ public class ScanProjectQuotas implements BackgroundFunction<PubSubMessage> {
       throws IOException {
     List<ProjectQuota> projectQuotas = getQuota(gcpProject, q);
     loadBigQueryTable(gcpResourceClient, projectQuotas);
-    logger.log(
-        Level.INFO, "Quotas loaded successfully for project Id:" + gcpProject.getProjectId());
+    logger.info("Quotas loaded successfully for project Id:" + gcpProject.getProjectId());
   }
 }
