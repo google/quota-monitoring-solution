@@ -10,7 +10,7 @@
                 <version>[ignore]</version>
                 <logger>[ignore]</logger>
                 <thread>[ignore]</thread>
-<!--                <level>[ignore]</level>-->
+                <level>[ignore]</level>
                 <levelValue>[ignore]</levelValue>
             </fieldNames>
         </encoder>
@@ -24,6 +24,6 @@
     </appender>
     <root level="INFO">
 <!--        severity: "INFO"-->
-        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="jsonConsoleAppender"/>
     </root>
 </configuration>
