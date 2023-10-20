@@ -125,8 +125,8 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
       MDC.put("severity", "INFO");
       logger.info("Query ran successfully ");
     } catch (BigQueryException | InterruptedException e) {
-      MDC.put("severity", "SEVERE");
-      logger.severe("Query failed to run \n" + e.toString());
+      MDC.put("severity", "CRITICAL");
+      logger.error("Query failed to run \n" + e.toString());
     }
     return alerts;
   }
@@ -249,8 +249,8 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
       // Identify the table
       result = queryJob.getQueryResults();
     } catch (InterruptedException e) {
-      MDC.put("severity", "SEVERE");
-      logger.severe("Error executing BigQuery query"+e.getMessage());
+      MDC.put("severity", "CRITICAL");
+      logger.error("Error executing BigQuery query"+e.getMessage());
     }
     return result;
   }
