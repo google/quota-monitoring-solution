@@ -582,7 +582,7 @@ resource "null_resource" "update_logging_sink" {
   }
 
   provisioner "local-exec" {
-    command = "gcloud logging sinks update _Default --log-filter=\"NOT LOG_ID('cloudaudit.googleapis.com/access_transparency') AND NOT LOG_ID('externalaudit.googleapis.com/access_transparency') AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects or resource.labels.function_name=configAppAlerts or resource.labels.function_name=quotaMonitoringNotification or resource.labels.function_name=quotaMonitoringScanProjects)\""
+    command = "gcloud logging sinks update _Default --log-filter=\"NOT LOG_ID('cloudaudit.googleapis.com/access_transparency') AND NOT LOG_ID('externalaudit.googleapis.com/access_transparency') AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringScanProjects)\""
   }
 }
 
