@@ -72,6 +72,7 @@ public class ScanProjectQuotas implements BackgroundFunction<PubSubMessage> {
       MDC.put("severity", "ERROR");
       logger.error( " " + e.getMessage(), e);
     }
+    MDC.remove("severity");
   }
 
   /*

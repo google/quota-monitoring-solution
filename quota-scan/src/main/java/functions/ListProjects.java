@@ -115,10 +115,11 @@ public class ListProjects implements HttpFunction {
       logger.error("Error publishing Pub/Sub message: " + e.getMessage(), e);
       responseMessage = "Error publishing Pub/Sub message; see logs for more info.";
     }
-    MDC.remove("severity");
     var writer = new PrintWriter(response.getWriter());
+    MDC.put("severity", "INFO");
     writer.printf("projectId: %s!", HOME_PROJECT_ID);
     writer.printf("publish response: %s!", responseMessage);
+    MDC.remove("severity");
   }
 
   /*

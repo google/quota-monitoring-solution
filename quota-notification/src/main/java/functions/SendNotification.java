@@ -36,7 +36,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /*
  * Cloud Function triggered by Pub/Sub topic to send notification
@@ -48,7 +50,7 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
   private static final String APP_ALERT_DATASET = System.getenv("APP_ALERT_DATASET");
   private static final String APP_ALERT_TABLE = System.getenv("APP_ALERT_TABLE");
 
-  private static final Logger logger = Logger.getLogger(SendNotification.class.getName());
+  private static final Logger logger = LoggerFactory.getLogger(SendNotification.class);
 
   /*
    * API to accept notification information and process it
@@ -58,12 +60,14 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
     // Initialize client that will be used to send requests
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     // logger.info(String.format(message.getEmailIds()));
+    MDC.put("severity", "INFO");
     logger.info("Successfully made it to sendNotification");
     List<Alert> alerts = browseAlertTable(bigquery);
     logger.info("Successfully got data from alert table");
     String alertMessage = buildAlertMessage(alerts, null);
     logger.info(alertMessage);
     appAlertLogs(bigquery, alerts);
+    MDC.remove("severity");
     return;
   }
 
@@ -118,8 +122,10 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
 
         alerts.add(alert);
       }
+      MDC.put("severity", "INFO");
       logger.info("Query ran successfully ");
     } catch (BigQueryException | InterruptedException e) {
+      MDC.put("severity", "SEVERE");
       logger.severe("Query failed to run \n" + e.toString());
     }
     return alerts;
@@ -171,7 +177,7 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
 
       }
     }
-
+    MDC.put("severity", "INFO");
     for(Map.Entry<String, List<Alert>> entry : appAlerts.entrySet() ){
       if(entry.getValue().size() > 0){
         String alertMessage = buildAlertMessage(entry.getValue(), entry.getKey());
@@ -214,6 +220,7 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
       appAlert.setAlertPolicyId(row.get("alert_policy_id").isNull() ? null : row.get("alert_policy_id").getStringValue());
       appAlerts.add(appAlert);
     }
+    MDC.put("severity", "INFO");
     logger.info("Query ran successfully to list App Alerts!");
 
     return appAlerts;
@@ -242,6 +249,7 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
       // Identify the table
       result = queryJob.getQueryResults();
     } catch (InterruptedException e) {
+      MDC.put("severity", "SEVERE");
       logger.severe("Error executing BigQuery query"+e.getMessage());
     }
     return result;
