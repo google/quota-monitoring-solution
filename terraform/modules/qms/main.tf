@@ -576,6 +576,27 @@ resource "google_logging_project_sink" "instance-sink" {
   depends_on             = [module.project-services]
 }
 
+resource "null_resource" "update_logging_sink" {
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+
+  provisioner "local-exec" {
+    command = "gcloud logging sinks update _Default --log-filter=\"NOT LOG_ID('cloudaudit.googleapis.com/access_transparency') AND NOT LOG_ID('externalaudit.googleapis.com/access_transparency') AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects or resource.labels.function_name=configAppAlerts or resource.labels.function_name=quotaMonitoringNotification or resource.labels.function_name=quotaMonitoringScanProjects)\""
+  }
+}
+
+//resource "google_logging_project_sink" "default-sink" {
+//  name                   = "_Default"
+//  destination            = "logging.googleapis.com/projects/${var.project_id}/locations/global/buckets/_Default"
+//  filter                 = "NOT LOG_ID(\"cloudaudit.googleapis.com/access_transparency\")" +
+//  " AND NOT LOG_ID(\"externalaudit.googleapis.com/access_transparency\") AND NOT((" +
+//  " severity=\"DEFAULT\" OR severity=\"DEBUG\") AND" +
+//  " resource.labels.function_name=\"quotaMonitoringListProjects\")"
+//  unique_writer_identity = true
+//  depends_on             = [module.project-services]
+//}
+
 #Because our sink uses a unique_writer, we must grant that writer access to the bucket.
 resource "google_project_iam_binding" "log-writer" {
   project    = var.project_id

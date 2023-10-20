@@ -35,6 +35,7 @@ import functions.eventpojos.GCPResourceClient;
 import functions.eventpojos.ProjectQuota;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -46,7 +47,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 public class ScanProjectQuotasHelper {
   private static final Logger logger = LoggerFactory.getLogger(ScanProjectQuotas.class);
@@ -189,6 +189,7 @@ public class ScanProjectQuotasHelper {
       }
 
     } catch (IOException e) {
+      MDC.put("severity", "ERROR");
       logger.error(
           "Error fetching timeseries data for project: "
               + gcpProject.getProjectName()
@@ -221,6 +222,7 @@ public class ScanProjectQuotasHelper {
         projectQuotas.put(key, populateProjectQuota(data, null, ts, indexMap, Quotas.RATE));   
       }
     } catch (IOException e) {
+      MDC.put("severity", "ERROR");
       logger.error(
           "Error fetching timeseries data for project: "
               + gcpProject.getProjectName()
@@ -260,7 +262,7 @@ public class ScanProjectQuotasHelper {
       HashMap<String, Integer> indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
       for (TimeSeriesData data : response.iterateAll()) {
         List<PointData> stuffs = data.getPointDataList();
-
+        MDC.put("severity", "INFO");
         for (PointData pointData : stuffs) {
          logger.info(String.format("Metric: %s, Current: %d, Max %d, Value %d%n", 
             data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue(),
@@ -280,6 +282,7 @@ public class ScanProjectQuotasHelper {
         projectQuotas.add(populateProjectQuota(data, values, ts, indexMap, Quotas.RATE));
       }
     } catch (IOException e) {
+      MDC.put("severity", "ERROR");
       logger.error(
           "Error fetching timeseries data for project: "
               + gcpProject.getProjectName()
@@ -403,11 +406,13 @@ public class ScanProjectQuotasHelper {
 
       if (response.hasErrors()) {
         // If any of the insertions failed, this lets you inspect the errors
+        MDC.put("severity", "ERROR");
         for (Map.Entry<Long, List<BigQueryError>> entry : response.getInsertErrors().entrySet()) {
           logger.error( "Bigquery row insert response error: " + entry.getValue());
         }
       }
     } catch (BigQueryException e) {
+      MDC.put("severity", "ERROR");
       logger.error("Insert operation not performed: " + e.toString());
     }
   }
