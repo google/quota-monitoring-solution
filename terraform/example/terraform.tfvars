@@ -15,11 +15,11 @@ Copyright 2022 Google LLC
 */
 
 # Update values
-project_id                 = "data-flow-pubsub-bigtable"
-region                     = "us-west1"
-service_account_email      = "sa-data-flow-pubsub-bigtable@data-flow-pubsub-bigtable.iam.gserviceaccount.com"
+project_id                 = ""
+region                     = ""
+service_account_email      = ""
 folders                    = "[]"
-organizations              = "[419713829424]"
-alert_log_bucket_name      = "quota-project-yanni"
-notification_email_address = "yannipeng@google.com"
-threshold                  = "99"
+organizations              = "[]"
+alert_log_bucket_name      = ""
+notification_email_address = ""
+threshold                  = ""
