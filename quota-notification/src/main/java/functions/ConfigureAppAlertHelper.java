@@ -63,9 +63,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
+import java.util.logging.Logger;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -75,7 +73,7 @@ public class ConfigureAppAlertHelper {
   private static final String TABLE = ConfigureAppAlert.APP_ALERT_TABLE;
   private static final String CSV_SOURCE_URI = ConfigureAppAlert.CSV_SOURCE_URI;
 
-  private static final Logger logger = LoggerFactory.getLogger(ConfigureAppAlertHelper.class);
+  private static final Logger logger = Logger.getLogger(ConfigureAppAlertHelper.class.getName());
 
 
 
@@ -94,11 +92,9 @@ public class ConfigureAppAlertHelper {
     // 2. There are no records with empty/null project_id, email_id or app_code
     // 3. There are no duplicates for app_code
     if(isCSVParseSuccess()){
-      MDC.put("severity", "INFO");
       logger.info("CSV parsed successfully! Loading data in BigQuery...");
     } else {
-      MDC.put("severity", "CRITICAL");
-      logger.error("CSV parsing failed. Fix the CSV to proceed.");
+      logger.severe("CSV parsing failed. Fix the CSV to proceed.");
       return;
     }
 
@@ -121,17 +117,14 @@ public class ConfigureAppAlertHelper {
       // Blocks until this load table job completes its execution, either failing or succeeding.
       job = job.waitFor();
       if (job.isDone()) {
-        MDC.put("severity", "INFO");
         logger.info("CSV from GCS successfully added during load append job");
       } else {
-        MDC.put("severity", "CRITICAL");
-        logger.error(
+        logger.severe(
             "BigQuery was unable to load into the table due to an error:"
                 + job.getStatus().getError());
       }
     } catch (BigQueryException | InterruptedException e) {
-      MDC.put("severity", "CRITICAL");
-      logger.error("Column not added during load append \n" + e.toString());
+      logger.severe("Column not added during load append \n" + e.toString());
     }
   }
 
@@ -154,7 +147,6 @@ public class ConfigureAppAlertHelper {
       appAlert.setAlertPolicyId(createOrUpdateAlertPolicy(appAlert));
       updateAppAlertConfig(bigquery, appAlert);
     }
-    MDC.put("severity", "INFO");
     logger.info("App Alert configuration completed successfully for all apps!");
   }
 
@@ -168,8 +160,7 @@ public class ConfigureAppAlertHelper {
       String appCode  = appAlert.getAppCode();
       //If AppCode is not unique, return false
       if(!appCodes.add(appCode)){
-        MDC.put("severity", "CRITICAL");
-        logger.error("Found duplicate app code \""+appCode+"\" in BigQuery Table. app_code should be unique for each row" );
+        logger.severe("Found duplicate app code \""+appCode+"\" in BigQuery Table. app_code should be unique for each row" );
         return false;
       }
     }
@@ -210,7 +201,6 @@ public class ConfigureAppAlertHelper {
       appAlert.setAlertPolicyId(row.get("alert_policy_id").isNull() ? null : row.get("alert_policy_id").getStringValue());
       appAlerts.add(appAlert);
     }
-    MDC.put("severity", "INFO");
     logger.info("Query ran successfully to list App Alerts!");
 
     return appAlerts;
@@ -240,7 +230,7 @@ public class ConfigureAppAlertHelper {
 
     /*// Print the results.
     result.iterateAll().forEach(rows -> rows.forEach(row -> logger.info((String) row.getValue())));*/
-    MDC.put("severity", "INFO");
+
     logger.info("Table updated successfully and updated Alert Config for App Alerts");
   }
 
@@ -265,10 +255,8 @@ public class ConfigureAppAlertHelper {
           .build();
       metricInfo = logging.create(metricInfo);
     } catch (Exception e) {
-      MDC.put("severity", "CRITICAL");
-      logger.error("Error creating Custom Log Metric for app code - "+appAlert.getAppCode()+e.getMessage());
+      logger.severe("Error creating Custom Log Metric for app code - "+appAlert.getAppCode()+e.getMessage());
     }
-    MDC.put("severity", "INFO");
     logger.info("Successfully created custom log metric - "+ ((metricInfo == null ) ? null : metricInfo.getName()));
     return metricInfo.getName();
   }
@@ -288,8 +276,7 @@ public class ConfigureAppAlertHelper {
         notificationChannel = updateNotificationChannel(client, appAlert);
       }
     } catch (IOException e) {
-      MDC.put("severity", "CRITICAL");
-      logger.error("Can't create Notification channel "+e.toString());
+      logger.severe("Can't create Notification channel "+e.toString());
     }
     return ((notificationChannel == null ) ? null : notificationChannel.getName());
   }
@@ -306,7 +293,6 @@ public class ConfigureAppAlertHelper {
         .build();
 
     notificationChannel = client.createNotificationChannel("projects/"+HOME_PROJECT,notificationChannel);
-    MDC.put("severity", "INFO");
     logger.info("Successfully created notification channel - "+notificationChannel.getName());
     return notificationChannel;
   }
@@ -326,7 +312,6 @@ public class ConfigureAppAlertHelper {
     UpdateNotificationChannelRequest updateNotificationChannelRequest  =
         UpdateNotificationChannelRequest.newBuilder().setNotificationChannel(notificationChannel).build();
     notificationChannel = client.updateNotificationChannel(updateNotificationChannelRequest);
-    MDC.put("severity", "INFO");
     logger.info("Successfully updated notification channel - "+notificationChannel.getName());
     return notificationChannel;
   }
@@ -386,8 +371,7 @@ public class ConfigureAppAlertHelper {
 
 
     } catch (IOException e) {
-      MDC.put("severity", "CRITICAL");
-      logger.error("Error creating or updating Alert Policy for app code - "+appAlert.getAppCode()+e.getMessage());
+      logger.severe("Error creating or updating Alert Policy for app code - "+appAlert.getAppCode()+e.getMessage());
     }
     return ((actualAlertPolicy == null) ? null : actualAlertPolicy.getName());
 
@@ -407,7 +391,6 @@ public class ConfigureAppAlertHelper {
             .build();
 
     AlertPolicy actualAlertPolicy = client.createAlertPolicy(ProjectName.of(HOME_PROJECT), alertPolicy);
-    MDC.put("severity", "INFO");
     logger.info("alert policy created successfully - "+ actualAlertPolicy.getName());
     return actualAlertPolicy;
   }
@@ -429,7 +412,6 @@ public class ConfigureAppAlertHelper {
     UpdateAlertPolicyRequest updateAlertPolicyRequest =
         UpdateAlertPolicyRequest.newBuilder().setAlertPolicy(alertPolicy1).build();
     AlertPolicy actualAlertPolicy = client.updateAlertPolicy(updateAlertPolicyRequest);
-    MDC.put("severity", "INFO");
     logger.info("alert policy updated successfully - "+ actualAlertPolicy.getName());
     return actualAlertPolicy;
   }
@@ -479,8 +461,7 @@ public class ConfigureAppAlertHelper {
     Blob blob = storage.get(bucketName,fileName);
     //If csv file is not found in the cloud storage bucket, return
     if(blob == null){
-      MDC.put("severity", "CRITICAL");
-      logger.error("CSV file not found - "+CSV_SOURCE_URI);
+      logger.severe("CSV file not found - "+CSV_SOURCE_URI);
       return false;
     }
     ReadChannel readChannel = blob.reader();
@@ -491,25 +472,21 @@ public class ConfigureAppAlertHelper {
 
         //2. Check if each record contains projectId, emailId and appCode
         if(StringUtils.isEmpty(cells[0]) || StringUtils.isEmpty(cells[1]) || StringUtils.isEmpty(cells[2])){
-          MDC.put("severity", "CRITICAL");
-          logger.error("Found empty record in CSV. Can't load csv in BigQuery. Required project_id, email_id and app_code in each rows");
+          logger.severe("Found empty record in CSV. Can't load csv in BigQuery. Required project_id, email_id and app_code in each rows");
           return false;
         }
 
         //3. Check that appCode is not duplicate
         if(!appCodes.add(cells[2])) {
-          MDC.put("severity", "CRITICAL");
-          logger.error("Found duplicate app code \""+cells[2]+"\" in CSV. Can't load csv in BigQuery. app_code should be unique for each row");
+          logger.severe("Found duplicate app code \""+cells[2]+"\" in CSV. Can't load csv in BigQuery. app_code should be unique for each row");
           return false;
         }
       }
     } catch (FileNotFoundException e) {
-      MDC.put("severity", "CRITICAL");
-      logger.error("File not found - "+CSV_SOURCE_URI+e.getMessage());
+      logger.severe("File not found - "+CSV_SOURCE_URI+e.getMessage());
       return false;
     } catch (IOException e) {
-      MDC.put("severity", "CRITICAL");
-      logger.error("Error parsing CSV file - "+CSV_SOURCE_URI+e.getMessage());
+      logger.severe("Error parsing CSV file - "+CSV_SOURCE_URI+e.getMessage());
       return false;
     }
     return true;
@@ -539,8 +516,7 @@ public class ConfigureAppAlertHelper {
       // Identify the table
       result = queryJob.getQueryResults();
     } catch (InterruptedException e) {
-      MDC.put("severity", "CRITICAL");
-      logger.error("Error executing BigQuery query"+e.getMessage());
+      logger.severe("Error executing BigQuery query"+e.getMessage());
     }
     return result;
   }

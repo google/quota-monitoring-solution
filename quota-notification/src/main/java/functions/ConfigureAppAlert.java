@@ -24,9 +24,7 @@ import com.google.cloud.bigquery.TableId;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
+import java.util.logging.Logger;
 
 public class ConfigureAppAlert implements HttpFunction {
   public static final String HOME_PROJECT = System.getenv("HOME_PROJECT");
@@ -34,7 +32,7 @@ public class ConfigureAppAlert implements HttpFunction {
   public static final String APP_ALERT_TABLE = System.getenv("APP_ALERT_TABLE");
   public static final String CSV_SOURCE_URI = System.getenv("CSV_SOURCE_URI");
 
-  private static final Logger logger = LoggerFactory.getLogger(ConfigureAppAlert.class);
+  private static final Logger logger = Logger.getLogger(ConfigureAppAlert.class.getName());
 
   @Override
   public void service(HttpRequest request, HttpResponse response)
@@ -48,7 +46,6 @@ public class ConfigureAppAlert implements HttpFunction {
     loadCsvFromGcsToBigQuery(bigquery,tableId);
     // Configure App Alerting - Custom Log Metrics, Notification Channels and Alert Policies
     configureAppAlerting(bigquery);
-    MDC.remove("severity");
   }
 
 

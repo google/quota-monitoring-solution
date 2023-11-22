@@ -33,10 +33,6 @@ import com.google.monitoring.v3.TimeSeriesData.PointData;
 import functions.eventpojos.GCPProject;
 import functions.eventpojos.GCPResourceClient;
 import functions.eventpojos.ProjectQuota;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -47,9 +43,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ScanProjectQuotasHelper {
-  private static final Logger logger = LoggerFactory.getLogger(ScanProjectQuotas.class);
+  private static final Logger logger = Logger.getLogger(ScanProjectQuotasHelper.class.getName());
 
   public static final String MQL_ALLOCATION_ALL = "fetch consumer_quota" +
   "| { current: metric serviceruntime.googleapis.com/quota/allocation/usage" +  
@@ -189,8 +187,8 @@ public class ScanProjectQuotasHelper {
       }
 
     } catch (IOException e) {
-      MDC.put("severity", "ERROR");
-      logger.error(
+      logger.log(
+          Level.SEVERE,
           "Error fetching timeseries data for project: "
               + gcpProject.getProjectName()
               + e.getMessage(),
@@ -222,8 +220,8 @@ public class ScanProjectQuotasHelper {
         projectQuotas.put(key, populateProjectQuota(data, null, ts, indexMap, Quotas.RATE));   
       }
     } catch (IOException e) {
-      MDC.put("severity", "ERROR");
-      logger.error(
+      logger.log(
+          Level.SEVERE,
           "Error fetching timeseries data for project: "
               + gcpProject.getProjectName()
               + e.getMessage(),
@@ -262,7 +260,7 @@ public class ScanProjectQuotasHelper {
       HashMap<String, Integer> indexMap = buildIndexMap(response.getPage().getResponse().getTimeSeriesDescriptor());
       for (TimeSeriesData data : response.iterateAll()) {
         List<PointData> stuffs = data.getPointDataList();
-        MDC.put("severity", "INFO");
+
         for (PointData pointData : stuffs) {
          logger.info(String.format("Metric: %s, Current: %d, Max %d, Value %d%n", 
             data.getLabelValues(indexMap.get("metric.quota_metric")).getStringValue(),
@@ -282,8 +280,8 @@ public class ScanProjectQuotasHelper {
         projectQuotas.add(populateProjectQuota(data, values, ts, indexMap, Quotas.RATE));
       }
     } catch (IOException e) {
-      MDC.put("severity", "ERROR");
-      logger.error(
+      logger.log(
+          Level.SEVERE,
           "Error fetching timeseries data for project: "
               + gcpProject.getProjectName()
               + e.getMessage(),
@@ -406,14 +404,12 @@ public class ScanProjectQuotasHelper {
 
       if (response.hasErrors()) {
         // If any of the insertions failed, this lets you inspect the errors
-        MDC.put("severity", "ERROR");
         for (Map.Entry<Long, List<BigQueryError>> entry : response.getInsertErrors().entrySet()) {
-          logger.error( "Bigquery row insert response error: " + entry.getValue());
+          logger.log(Level.SEVERE, "Bigquery row insert response error: " + entry.getValue());
         }
       }
     } catch (BigQueryException e) {
-      MDC.put("severity", "ERROR");
-      logger.error("Insert operation not performed: " + e.toString());
+      logger.log(Level.SEVERE, "Insert operation not performed: " + e.toString());
     }
   }
 }
