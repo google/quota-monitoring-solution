@@ -580,9 +580,12 @@ resource "null_resource" "update_logging_sink" {
   triggers = {
     always_run = "${timestamp()}"
   }
+#   triggers = {
+#     on_version_change = var.qms_version
+#   }
 
   provisioner "local-exec" {
-    command = "gcloud logging sinks update _Default --log-filter=\"NOT LOG_ID('cloudaudit.googleapis.com/access_transparency') AND NOT LOG_ID('externalaudit.googleapis.com/access_transparency') AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringScanProjects)\""
+    command = "gcloud logging sinks create quota-monitoring-sink logging.googleapis.com/projects/data-flow-pubsub-bigtable/locations/global/buckets/_Default --log-filter=\"NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringScanProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=configAppAlerts) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringNotification)\"
   }
 }
 
