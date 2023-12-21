@@ -580,12 +580,13 @@ resource "null_resource" "update_logging_sink" {
   triggers = {
     always_run = "${timestamp()}"
   }
+  depends_on     = [module.project-services]
 #   triggers = {
 #     on_version_change = var.qms_version
 #   }
 
   provisioner "local-exec" {
-    command = "gcloud logging sinks create quota-monitoring-sink logging.googleapis.com/projects/data-flow-pubsub-bigtable/locations/global/buckets/_Default --log-filter=\"NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringScanProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=configAppAlerts) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringNotification)\"
+    command = "gcloud logging sinks create quota-monitoring-functions-sink logging.googleapis.com/projects/data-flow-pubsub-bigtable/locations/global/buckets/_Default --log-filter=\"NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringScanProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=configAppAlerts) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringNotification)\"
   }
 }
 
