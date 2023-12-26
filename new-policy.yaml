@@ -1,3 +1,0 @@
-constraint: constraints/cloudfunctions.allowedIngressSettings
-listPolicy:
- allValues: ALLOW
