@@ -180,7 +180,7 @@ public class ListProjects implements HttpFunction {
       // Wait on any pending publish requests.
       List<String> messageIds = ApiFutures.allAsList(messageIdFutures).get();
 
-      System.out.println("Published " + messageIds.size() + " messages with batch settings.");
+      logger.info("Published " + messageIds.size() + " messages with batch settings.");
 
       if (publisher != null) {
         // When finished with the publisher, shutdown to free up resources.

@@ -125,6 +125,7 @@ resource "google_storage_bucket" "bucket_gcf_source" {
   storage_class = "REGIONAL"
   location      = local.expanded_region
   force_destroy = "true"
+  uniform_bucket_level_access = "true"
 }
 
 data "archive_file" "local_source_code_zip" {
@@ -573,6 +574,20 @@ resource "google_logging_project_sink" "instance-sink" {
   filter                 = "logName=\"projects/${var.project_id}/logs/quota-alerts\""
   unique_writer_identity = true
   depends_on             = [module.project-services]
+}
+
+resource "null_resource" "update_logging_sink" {
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+  depends_on     = [module.project-services]
+#   triggers = {
+#     on_version_change = var.qms_version
+#   }
+
+  provisioner "local-exec" {
+    command = "gcloud logging sinks update _Default --log-filter=\"NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringScanProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=configAppAlerts) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringNotification)\""
+  }
 }
 
 #Because our sink uses a unique_writer, we must grant that writer access to the bucket.
