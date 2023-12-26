@@ -324,7 +324,7 @@ variable "log_sink_name" {
 }
 
 variable "retention_days" {
-  description = "Log Sink Bucket's retention period in days to detele alert logs"
+  description = "Log Sink Bucket's retention period in days to delete alert logs"
   type        = number
   default     = 30
 }
