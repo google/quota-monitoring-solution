@@ -1,6 +1,6 @@
 # Quota Monitoring and Alerting
 
-> An easy-to-deploy Data Studio Dashboard with alerting capabilities, showing
+> An easy-to-deploy Looker Studio Dashboard with alerting capabilities, showing
 usage and quota limits in an organization or folder.
 
 Google Cloud enforces [quotas](https://cloud.google.com/docs/quota) on resource
@@ -22,7 +22,7 @@ Google Cloud customers.
 ## 1. Summary
 
 Quota Monitoring Solution is a stand-alone application of an easy-to-deploy
-Data Studio dashboard with alerting capabilities showing all usage and quota
+Looker Studio dashboard with alerting capabilities showing all usage and quota
 limits in an organization or folder.
 
 ### 1.1 Four Initial Features
@@ -51,9 +51,9 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 *   Alerts can be received by Email, Mobile App, PagerDuty, SMS, Slack,
     Webhooks and Pub/Sub. Cloud Monitoring custom log metric has been leveraged to
     create Alerts.
-*   Easy to get started and deploy with Data Studio Dashboard. In addition to
-    Data Studio, other visualization tools can be configured.
-*   The Data Studio report can be scheduled to be emailed to appropriate team
+*   Easy to get started and deploy with Looker Studio Dashboard. In addition to
+    Looker Studio, other visualization tools can be configured.
+*   The Looker Studio report can be scheduled to be emailed to appropriate team
     for weekly/daily reporting.
 
 ## 3. Deployment Guide
@@ -79,7 +79,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
     - [3.7 Configure Terraform](#37-configure-terraform)
     - [3.8 Run Terraform](#38-run-terraform)
     - [3.9 Testing](#39-testing)
-    - [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup)
+    - [3.10 Looker Studio Dashboard setup](#310-looker-studio-dashboard-setup)
     - [3.11 Scheduled Reporting](#311-scheduled-reporting)
     - [3.11 Alerting](#311-alerting)
       - [3.11.1 Slack Configuration](#3111-slack-configuration)
@@ -93,7 +93,8 @@ Functions, Pub/Sub, Dataflow and BigQuery.
     - [v4.4.0](#v440)
       - [New in v4.4.0](#new-in-v440)
   - [5. What is Next](#5-what-is-next)
-  - [5. Contact Us](#5-contact-us)
+  - [6. Getting Support](#6-getting-support)
+  - [7. Contributing](#7-contributing)
 <!-- markdownlint-restore -->
 
 ### 3.1 Prerequisites
@@ -370,21 +371,42 @@ Account created in the previous step at the Org A:
     cd ./quota-monitorings-solution/terraform/example
     ```
 
-### 3.6 Download Service Account Key File
+### 3.6 Set OAuth Token Using Service Account Impersonization
 
-Create Service Account key from host project A. The service account key file
-will be downloaded to your machine as key.json. After you download the key
-file, you cannot download it again.
+Impersonate your host project service account and set environment variable
+using temporary token to authenticate terraform. You will need to make
+sure your user has the
+[Service Account Token Creator role](https://cloud.google.com/iam/docs/service-account-permissions#token-creator-role)
+to create short-lived credentials.
 
 ```sh
-gcloud iam service-accounts keys create key.json \
-    --iam-account=$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com
+gcloud config set auth/impersonate_service_account \
+    $SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com
+
+export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 ```
+
+*   **TIP**: If you get an error saying *unable to impersonate*, you will
+need to unset the impersonation. Have the role added similar to below, then
+try again.
+
+    ```sh
+    # unset impersonation
+    gcloud config unset auth/impersonate_service_account
+
+    # set your current authenticated user as var
+    PROJECT_USER=$(gcloud config get-value core/account)
+
+    # grant IAM role serviceAccountTokenCreator
+    gcloud iam service-accounts add-iam-policy-binding $SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com \
+        --member user:$PROJECT_USER \
+        --role roles/iam.serviceAccountTokenCreator \
+        --condition=None
+    ```
 
 ### 3.7 Configure Terraform
 
-1.  Verify that you have these 4 files in your local directory:
-    *   key.json
+1.  Verify that you have these 3 files in your local directory:
     *   main.tf
     *   variables.tf
     *   terraform.tfvars
@@ -417,16 +439,33 @@ gcloud iam service-accounts keys create key.json \
     *   Enable required APIs
     *   Create all resources and connect them.
 
-Note: In case terraform fails, run terraform plan and terraform apply again
+    Note: In case terraform fails, run terraform plan and terraform apply again
+
+3.  Stop impersonating service account (when finished with terraform)
+
+    ```sh
+    gcloud config unset auth/impersonate_service_account
+    ```
 
 ### 3.9 Testing
 
-1.  Click ‘Run Now’ on Cloud Job scheduler.
+1.  Initiate first job run in Cloud Scheduler.
+
+    **Console**
+
+    Click 'Run Now' on Cloud Job scheduler.
 
     *Note: The status of the ‘Run Now’ button changes to ‘Running’ for a fraction
     of seconds.*
 
     ![run-cloud-scheduler](img/run_cloud_scheduler.png)
+
+    **Terminal**
+
+    ```sh
+    gcloud scheduler jobs run quota-monitoring-cron-job --location <region>
+    gcloud scheduler jobs run quota-monitoring-app-alert-config --location <region>
+    ```
 
 2.  To verify that the program ran successfully, check the BigQuery Table. The
     time to load data in BigQuery might take a few minutes. The execution time
@@ -434,17 +473,15 @@ Note: In case terraform fails, run terraform plan and terraform apply again
     like this:
     ![test-bigquery-table](img/test_bigquery_table.png)
 
-### 3.10 Data Studio Dashboard setup
+### 3.10 Looker Studio Dashboard setup
 
-1.  Go to the [Data Studio dashboard template](https://lookerstudio.google.com/reporting/961c5118-2503-449a-b592-5c2ff13db099).
-    If this link is not accessible, reach out to
-    quota-monitoring-solution@google.com to share the dashboard template with your
-    email id. A Data Studio dashboard will look like this:
+1.  Go to the [Looker Studio dashboard template](https://lookerstudio.google.com/reporting/f5e179e9-29e1-46c2-a443-97f5e24edd64).
+    A Looker Studio dashboard will look like this:
     ![ds-updated-quotas-dashboard](img/ds-updated-quotas-dashboard.png)
 2.  Make a copy of the template from the copy icon at the top bar (top - right
     corner)
     ![ds-dropdown-copy](img/ds-dropdown-copy.png)
-3.  Click on ‘Copy Report’ button
+3.  Click on ‘Copy Report’ button **without changing datasource options**
     ![ds-copy-report-fixed-new-data-source](img/ds-copy-report-fixed-new-data-source.png)
 4.  This will create a copy of the report and open in Edit mode. If not click on
     ‘Edit’ button on top right corner in copied template:
@@ -509,8 +546,8 @@ Note: In case terraform fails, run terraform plan and terraform apply again
 
 ### 3.11 Scheduled Reporting
 
-Quota monitoring reports can be scheduled from the Data Studio dashboard using
-‘Schedule email delivery’. The screenshot of the Data studio dashboard will be
+Quota monitoring reports can be scheduled from the Looker Studio dashboard using
+‘Schedule email delivery’. The screenshot of the Looker Studio dashboard will be
 delivered as a pdf report to the configured email Ids.
 
 ![ds-schedule-email-button](img/ds-schedule-email-button.png)
@@ -573,7 +610,7 @@ the specified threshold limit.
 
 *   The new version provides visibility into Quotas across various GCP services
     beyond the original GCE (Compute).
-*   New Data Studio Dashboard template reporting metrics across GCP services
+*   New Looker Studio Dashboard template reporting metrics across GCP services
 
 #### Known Limitations
 
@@ -596,8 +633,8 @@ the specified threshold limit.
     To upgrade existing installations:
 
     *   Re-run the Terraform, to update the Cloud Functions and Scheduled Query
-    *   Update the SQL used in the Data Studio dashboard according to Step #7
-        of [3.10 Data Studio Dashboard setup](#310-data-studio-dashboard-setup).
+    *   Update the SQL used in the Looker Studio dashboard according to Step #7
+        of [3.10 Looker Studio Dashboard setup](#310-looker-studio-dashboard-setup).
 
 ## 5. What is Next
 
@@ -605,6 +642,21 @@ the specified threshold limit.
 2.  Search project, folder, org, region
 3.  Threshold configurable for each metric
 
-## 5. Contact Us
+## 6. Getting Support
 
-For any comments, issues or feedback, please reach out to us at quota-monitoring-solution@google.com
+Quota Monitoring Solution is a project based on open source contributions. We'd
+love for you to [report issues, file feature requests][new-issue], and
+[send pull requests][new-pr] (see [Contributing](README.md#7-contributing)). Quota
+Monitoring Solution is not officially covered by the Google Cloud product support.
+
+## 7. Contributing
+
+*   [Contributing guidelines][contributing-guidelines]
+*   [Code of conduct][code-of-conduct]
+
+<!-- LINKS: https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
+[code-of-conduct]: code-of-conduct.md
+[contributing-guidelines]: CONTRIBUTING.md
+[new-issue]: https://github.com/google/quota-monitoring-solution/issues/new
+[new-pr]: https://github.com/google/quota-monitoring-solution/compare

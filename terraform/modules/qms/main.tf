@@ -14,6 +14,12 @@ Copyright 2022 Google LLC
    limitations under the License.
 */
 
+terraform {
+  provider_meta "google" {
+    module_name = "cloud-solutions/quota-monitoring-solution-deploy-v5.1" #x-release-please-minor
+  }
+}
+
 locals {
   expanded_region    = var.region == "us-central" || var.region == "europe-west" ? "${var.region}1" : var.region
   use_github_release = var.qms_version != "main" ? true : false
@@ -96,6 +102,7 @@ resource "google_storage_bucket" "bucket_gcf_source" {
   storage_class = "REGIONAL"
   location      = local.expanded_region
   force_destroy = "true"
+  uniform_bucket_level_access = "true"
 }
 
 data "archive_file" "local_source_code_zip" {
@@ -431,11 +438,12 @@ resource "google_bigquery_data_transfer_config" "query_config" {
   schedule                  = var.Alert_data_scanning_frequency
   notification_pubsub_topic = google_pubsub_topic.topic_alert_notification.id
   destination_dataset_id    = google_bigquery_dataset.quota_usage_alert_dataset.dataset_id
+  service_account_name      = var.service_account_email
   depends_on                = [module.project-services]
   params = {
     destination_table_name_template = var.big_query_alert_table_id
     write_disposition               = "WRITE_TRUNCATE"
-    query                           = "SELECT quota_metric, current_usage, max_usage, quota_limit, current_consumption, max_consumption, project_id, region, added_at FROM ( SELECT project_id, region, quota_metric, added_at, quota_limit, current_usage, max_usage, ROUND( ( SAFE_DIVIDE( CAST(current_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS current_consumption, ROUND( ( SAFE_DIVIDE( CAST(max_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS max_consumption, threshold FROM ${var.project_id}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.default.table_id} ) c WHERE c.current_consumption >= c.threshold OR c.max_consumption >= c.threshold"
+    query                           = "SELECT quota_metric, current_usage, max_usage, quota_limit, current_consumption, max_consumption, project_id, region, MAX(added_at) FROM ( SELECT project_id, region, quota_metric, added_at, quota_limit, current_usage, max_usage, ROUND( ( SAFE_DIVIDE( CAST(current_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS current_consumption, ROUND( ( SAFE_DIVIDE( CAST(max_usage AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC) ) * 100 ), 2 ) AS max_consumption, threshold FROM `${var.project_id}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.default.table_id}` ) c WHERE c.current_consumption >= c.threshold OR c.max_consumption >= c.threshold GROUP BY quota_metric, current_usage, max_usage, quota_limit, current_consumption, max_consumption, project_id, region"
   }
 }
 
@@ -516,7 +524,7 @@ EOF
 resource "google_logging_metric" "quota_logging_metric" {
   name        = "resource_usage"
   description = "Tracks logs for quota usage above threshold"
-  filter      = "logName:\"projects/${var.project_id}/logs/\" jsonPayload.message:\"|ProjectId | Scope |\""
+  filter      = "logName:\"projects/${var.project_id}/logs/\" jsonPayload.message:\"ProjectId | Scope |\""
   depends_on  = [module.project-services]
   metric_descriptor {
     metric_kind = "DELTA"
@@ -563,6 +571,20 @@ resource "google_logging_project_sink" "instance-sink" {
   filter                 = "logName=\"projects/${var.project_id}/logs/quota-alerts\""
   unique_writer_identity = true
   depends_on             = [module.project-services]
+}
+
+resource "null_resource" "update_logging_sink" {
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+  depends_on     = [module.project-services]
+#   triggers = {
+#     on_version_change = var.qms_version
+#   }
+
+  provisioner "local-exec" {
+    command = "gcloud logging sinks update _Default --log-filter=\"NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringListProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringScanProjects) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=configAppAlerts) AND NOT (severity=DEFAULT OR severity=DEBUG AND resource.labels.function_name=quotaMonitoringNotification)\""
+  }
 }
 
 #Because our sink uses a unique_writer, we must grant that writer access to the bucket.

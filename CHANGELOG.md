@@ -1,5 +1,35 @@
 # Changelog
 
+## [5.1.0](https://github.com/google/quota-monitoring-solution/compare/v5.0.2...v5.1.0) (2023-09-21)
+
+
+### Features
+
+* Add user-agent string to the terraform module. ([#95](https://github.com/google/quota-monitoring-solution/issues/95)) ([87780ec](https://github.com/google/quota-monitoring-solution/commit/87780ecdfce90217e1b822891c30e2b7722734bb))
+
+
+### Bug Fixes
+
+* adding main.tf to the extra files for release-please ([#96](https://github.com/google/quota-monitoring-solution/issues/96)) ([0c48faa](https://github.com/google/quota-monitoring-solution/commit/0c48faa13f185e00329443472cfbab696a563bec))
+* Fix for Issue [#86](https://github.com/google/quota-monitoring-solution/issues/86) (per second quotas) ([#89](https://github.com/google/quota-monitoring-solution/issues/89)) ([c2e5d47](https://github.com/google/quota-monitoring-solution/commit/c2e5d477574bfed4e77be2b6369a1f8d1b94a9ea))
+* Removing the leading pipe from the log filter. ([#90](https://github.com/google/quota-monitoring-solution/issues/90)) ([eab522e](https://github.com/google/quota-monitoring-solution/commit/eab522e9620e9fefdb31639f5ea656b0f10a1cd5))
+* Updating the README to clarify the preferred paths to get support. ([#93](https://github.com/google/quota-monitoring-solution/issues/93)) ([dcdeafb](https://github.com/google/quota-monitoring-solution/commit/dcdeafbfbc578f28e182eff59ab827e5c6d4853d))
+
+## [5.0.2](https://github.com/google/quota-monitoring-solution/compare/v5.0.1...v5.0.2) (2023-05-22)
+
+
+### Bug Fixes
+
+* Add quotes to BQ table location ([#84](https://github.com/google/quota-monitoring-solution/issues/84)) ([dcd52c3](https://github.com/google/quota-monitoring-solution/commit/dcd52c30918a5293a07c163158f24faa4456c216))
+
+## [5.0.1](https://github.com/google/quota-monitoring-solution/compare/v5.0.0...v5.0.1) (2023-04-26)
+
+
+### Bug Fixes
+
+* Feature/looker studio template public ([#80](https://github.com/google/quota-monitoring-solution/issues/80)) ([4d423e3](https://github.com/google/quota-monitoring-solution/commit/4d423e32b80af4061908704bb8fb89458fabbbbd))
+* Implemented [#67](https://github.com/google/quota-monitoring-solution/issues/67) - use short-lived tokens ([#69](https://github.com/google/quota-monitoring-solution/issues/69)) ([d08475a](https://github.com/google/quota-monitoring-solution/commit/d08475a622b82d21cb125a35571720fb69fe53d3))
+
 ## [5.0.0](https://github.com/google/quota-monitoring-solution/compare/v4.5.1...v5.0.0) (2023-01-18)
 
 

@@ -17,7 +17,7 @@ Copyright 2022 Google LLC
 variable "qms_version" {
   description = "Quota monitoring solution version to deploy"
   type        = string
-  default     = "v5.0.0" #x-release-please-version
+  default     = "v5.1.0" #x-release-please-version
 }
 
 variable "project_id" {
@@ -324,7 +324,7 @@ variable "log_sink_name" {
 }
 
 variable "retention_days" {
-  description = "Log Sink Bucket's retention period in days to detele alert logs"
+  description = "Log Sink Bucket's retention period in days to delete alert logs"
   type        = number
   default     = 30
 }
