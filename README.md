@@ -513,11 +513,13 @@ try again.
     ![ds_edit_data_source](img/ds_edit_data_source.png)
     It will open the data source details
     ![ds_datasource_config_step_1]img/ds_datasource_config_step_1.png
-6.  Add a list of  project ids (if you assigned app codes) from the csv file upload, and project id of your bq table, 
-    Dataset Id and Table Name to match your deployment. Verify the query by running in BigQuery Editor to make sure 
-    query the correct results and there are no syntax errors:
+6.  Replace the BigQuery project id of your bq table, Dataset Id and Table Name to 
+    match your deployment. If you assigned app codes add a list of  project ids in 
+    where clause  from the csv file upload. Verify the query by running in BigQuery
+    Editor to make sure query the correct results and there are no syntax errors:
 
     ```sql
+    # For org level dashboard use the following query
     SELECT 
         project_id,
         added_at,
@@ -546,6 +548,43 @@ try again.
         AND quota_limit IS NOT NULL
         AND current_usage != 0
         AND quota_limit != 0
+        GROUP BY
+        project_id,
+        region,
+        quota_metric,
+        added_at,
+        quota_limit
+    
+    # For app level dashboard use the following query replace PROJECT_ID with project_ids from csv file upload
+    SELECT 
+        project_id,
+        added_at,
+        region,
+        quota_metric,
+        CASE
+            WHEN CAST(quota_limit AS STRING) ='9223372036854775807' THEN 'unlimited'
+        ELSE
+            CAST(quota_limit AS STRING)
+        END AS str_quota_limit,
+        SUM(current_usage) AS current_usage,
+        ROUND((SAFE_DIVIDE(CAST(SUM(current_usage) AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC))*100),2) AS current_consumption,
+        SUM(max_usage) AS max_usage,
+        ROUND((SAFE_DIVIDE(CAST(SUM(max_usage) AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC))*100),2) AS max_consumption
+    FROM
+        (
+            SELECT
+                *,
+                RANK() OVER (PARTITION BY project_id, region, quota_metric ORDER BY added_at DESC) AS latest_row
+            FROM
+                `[YOUR_PROJECT_ID].quota_monitoring_dataset.quota_monitoring_table`
+        ) t
+    WHERE
+        latest_row=1
+        AND current_usage IS NOT NULL
+        AND quota_limit IS NOT NULL
+        AND current_usage != 0
+        AND quota_limit != 0
+        AND project-id IN ([PROJECT_ID1], [PROJECT_ID2]..)
         GROUP BY
         project_id,
         region,
