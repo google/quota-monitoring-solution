@@ -513,8 +513,8 @@ try again.
     ![ds_edit_data_source](img/ds_edit_data_source.png)
     It will open the data source details
     ![ds_datasource_config_step_1]img/ds_datasource_config_step_1.png
-6.  Replace the BigQuery Project Id, Dataset Id and Table Name to match your
-    deployment. Verify the query by running in BigQuery Editor to make sure
+6.  Add a list of  project ids (if you assigned app codes) from the csv file upload, and project id of your bq table, 
+    Dataset Id and Table Name to match your deployment. Verify the query by running in BigQuery Editor to make sure 
     query the correct results and there are no syntax errors:
 
     ```sql
