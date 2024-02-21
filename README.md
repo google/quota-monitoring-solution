@@ -60,23 +60,24 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 
 ![configuration](img/quota-monitoring-config-flow.png)
 
-1.   Upload csv file with columns: project_id,email_id,app_code,dashboard_url
-
-2.   For applications with more than 1 projects the project_id column can take 
+1.  Upload csv file with columns: project_id,email_id,app_code,dashboard_url
+2.  For applications with more than 1 projects the project_id column can take 
 a string with more than project. Reference: [CSV file](./QMS_app_alerting.csv)
-3.   \*Note 1 project will only have 1 app-code, but app-code can have more than 1 project
+3.  \*Note 1 project will only have 1 app-code, but app-code can have more than 1 project
       e.g. If you have two rows in the csv file:
       edge-retail-374401|pub-sub-example-394521, appcode1
       edge-retail-374401, appcode2
       edge-retail-374401 will end up with appcode2. The last record overwrites the previous
-4.   Cloud scheduler will trigger configAppAlerts for each app code in csv:
-5.   Create custom log metric
-6.   Create notification channel
-7.   Create Alert using custom log metric & notification channel
-8.   Upload all data to big query
+4.  Cloud scheduler will trigger configAppAlerts for each app code in csv:
+5.  Create custom log metric
+6.  Create notification channel
+7.  Create Alert using custom log metric & notification channel
+8.  Upload all data to big query
+
 ## 4. Deployment Guide
 
 ### Content
+
 <!-- markdownlint-disable -->
 - [Quota Monitoring and Alerting](#quota-monitoring-and-alerting)
   - [1. Summary](#1-summary)
@@ -507,10 +508,10 @@ try again.
     ![ds_edit_data_source](img/ds_edit_data_source.png)
     It will open the data source details
     ![ds_datasource_config_step_1]img/ds_datasource_config_step_1.png
-6.  Replace the BigQuery project id of your bq table, Dataset Id and Table Name to 
+6.  Replace the BigQuery Project Id of your bq table, Dataset Id and Table Name to 
     match your deployment. If you assigned app codes add a list of  project ids in 
     where clause  from the csv file upload. Verify the query by running in BigQuery
-    Editor to make sure query the correct results and there are no syntax errors:
+    Editor for accuracy & syntax:
 
     ```sql
     #For org level dashboard use the following query
