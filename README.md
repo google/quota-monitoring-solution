@@ -63,11 +63,11 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 1.  Upload csv file with columns: project_id,email_id,app_code,dashboard_url
 2.  For applications with more than 1 projects the project_id column can take
 a string with more than project. Reference: [CSV file](./QMS_app_alerting.csv)
-3.  \*Note 1 project will only have 1 app-code, but app-code can have more 
+3.  \*Note 1 project will only have 1 app-code, but app-code can have more
     than 1 project.
-      
+
     e.g. If you have two rows in the csv file:
-    
+
     edge-retail-374401|pub-sub-example-394521, appcode1
 
     edge-retail-374401, appcode2
