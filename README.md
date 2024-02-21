@@ -695,7 +695,7 @@ the specified threshold limit.
 
     *   Re-run the Terraform, to update the Cloud Functions and Scheduled Query
     *   Update the SQL used in the Looker Studio dashboard according to Step #7
-        of [3.10 Looker Studio Dashboard setup](#310-looker-studio-dashboard-setup).
+        of [4.10 Looker Studio Dashboard setup](#410-looker-studio-dashboard-setup).
 
 ## 6. What is Next
 
