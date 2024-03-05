@@ -48,6 +48,9 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
   private static final String APP_ALERT_DATASET = System.getenv("APP_ALERT_DATASET");
   private static final String APP_ALERT_TABLE = System.getenv("APP_ALERT_TABLE");
 
+  private static final String DELIMITER = "|";
+  private static final String DELIMITER_REGEX = String.valueOf("\\|");
+
   private static final Logger logger = Logger.getLogger(SendNotification.class.getName());
 
   /*
@@ -59,6 +62,7 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     // logger.info(String.format(message.getEmailIds()));
     logger.info("Successfully made it to sendNotification");
+    // get rows from quota_monitoring_notification_table
     List<Alert> alerts = browseAlertTable(bigquery);
     logger.info("Successfully got data from alert table");
     String alertMessage = buildAlertMessage(alerts, null);
@@ -148,14 +152,23 @@ public class SendNotification implements BackgroundFunction<PubSubMessage> {
   /*
    * API to log App Alert Message for list of Quota metrics
    * */
-  private static void appAlertLogs(BigQuery bigquery, List<Alert> alerts){
+  static void appAlertLogs(BigQuery bigquery, List<Alert> alerts){
+    // quota_monitoring_app_alerting_table populated by csv
     List<AppAlert> appAlertsConfigs = listAppAlertConfig(bigquery);
     Map<String, String> appAlertsConfigsMap = new HashMap<>();
     Map<String, List<Alert>> appAlerts = new HashMap<>();
 
     //Convert List to Map
     for(AppAlert appAlertConfig : appAlertsConfigs){
-      appAlertsConfigsMap.put(appAlertConfig.getProjectId(), appAlertConfig.getAppCode());
+      String projects = appAlertConfig.getProjectId();
+      if (projects.contains(DELIMITER)) {
+        String[] projectIds = projects.split(DELIMITER_REGEX);
+        for ( String p : projectIds) {
+          appAlertsConfigsMap.put(p, appAlertConfig.getAppCode());
+        }
+      } else {
+        appAlertsConfigsMap.put(appAlertConfig.getProjectId(), appAlertConfig.getAppCode());
+      }
     }
 
     for(Alert alert : alerts){

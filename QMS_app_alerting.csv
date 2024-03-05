@@ -1,0 +1,5 @@
+project_id,email_id,app_code,dashboard_url
+edge-retail-374401|pub-sub-example-394521,admin@yannipeng.altostrat.com,app-1,https://lookerstudio.google.com/reporting/1fb0594e-67b1-4173-920a-8ac6318f2e14/page/xxWVB
+data-flow-pubsub-bigtable,admin@yannipeng.altostrat.com,app-2,https://lookerstudio.google.com/reporting/1fb0594e-67b1-4173-920a-8ac6318f2e14/page/xxWVB
+epam-394023,admin@yannipeng.altostrat.com,app-3,https://lookerstudio.google.com/reporting/1fb0594e-67b1-4173-920a-8ac6318f2e14/page/xxWVB
+yanni-test3,admin@yannipeng.altostrat.com,app-4,https://lookerstudio.google.com/reporting/1fb0594e-67b1-4173-920a-8ac6318f2e14/page/xxWVB

@@ -56,7 +56,30 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 *   The Looker Studio report can be scheduled to be emailed to appropriate team
     for weekly/daily reporting.
 
-## 3. Deployment Guide
+## 3. Configuring Quota Monitoring and Alerting
+
+![configuration](img/quota-monitoring-config-flow.png)
+
+1.  Upload csv file with columns: project_id,email_id,app_code,dashboard_url
+2.  For applications with more than 1 projects the project_id column can take
+a string with more than project. Reference: [CSV file](./QMS_app_alerting.csv)
+3.  \*Note 1 project will only have 1 app-code, but app-code can have more
+    than 1 project.
+
+    e.g. If you have two rows in the csv file:
+
+    edge-retail-374401|pub-sub-example-394521, appcode1
+
+    edge-retail-374401, appcode2
+
+    edge-retail-374401 will end up with appcode2.
+4.  Cloud scheduler will trigger configAppAlerts for each app code in csv:
+5.  Create custom log metric
+6.  Create notification channel
+7.  Create Alert using custom log metric & notification channel
+8.  Upload all data to big query
+
+## 4. Deployment Guide
 
 ### Content
 
@@ -96,7 +119,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
   - [7. Contributing](#7-contributing)
 <!-- markdownlint-restore -->
 
-### 3.1 Prerequisites
+### 4.1 Prerequisites
 
 1.  Host Project - A project where the BigQuery instance, Cloud Function and
     Cloud Scheduler will be deployed. For example Project A.
@@ -123,7 +146,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
 
     *Note - Minimum required version v0.14.6. Lower terraform versions may not work.*
 
-### 3.2 Initial Setup
+### 4.2 Initial Setup
 
 1.  In local workstation create a new directory to run terraform and store
     credential file
@@ -177,7 +200,7 @@ Functions, Pub/Sub, Dataflow and BigQuery.
     Success! The app is now created. Please use `gcloud app deploy` to deploy your first app.
     ```
 
-### 3.3 Create Service Account
+### 4.3 Create Service Account
 
 1.  In local workstation, setup environment variables. Replace the name of the
     Service Account in the commands below
@@ -206,9 +229,9 @@ Functions, Pub/Sub, Dataflow and BigQuery.
     Created service account [sa-quota-monitoring-project-1].
     ```
 
-### 3.4 Grant Roles to Service Account
+### 4.4 Grant Roles to Service Account
 
-#### 3.4.1 Grant Roles in the Host Project
+#### 4.4.1 Grant Roles in the Host Project
 
 The following roles need to be added to the Service Account in the host
 project i.e. Project A:
@@ -283,7 +306,7 @@ project i.e. Project A:
     gcloud projects add-iam-policy-binding $DEFAULT_PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com" --role="roles/iam.securityAdmin" --condition=None
     ```
 
-#### 3.4.2 Grant Roles in the Target Folder
+#### 4.4.2 Grant Roles in the Target Folder
 
 SKIP THIS STEP IF THE FOLDER IS NOT THE TARGET TO SCAN QUOTA
 
@@ -318,7 +341,7 @@ Account created in the previous step at the target folder A:
 
     Note: If this fails, run the commands again
 
-#### 3.4.3 Grant Roles in the Target Organization
+#### 4.4.3 Grant Roles in the Target Organization
 
 SKIP THIS STEP IF THE ORGANIZATION IS NOT THE TARGET
 
@@ -356,7 +379,7 @@ Account created in the previous step at the Org A:
     gcloud organizations add-iam-policy-binding  $TARGET_ORG_ID --member="serviceAccount:$SERVICE_ACCOUNT_ID@$DEFAULT_PROJECT_ID.iam.gserviceaccount.com"  --role="roles/monitoring.viewer" --condition=None
     ```
 
-### 3.5 Download the Source Code
+### 4.5 Download the Source Code
 
 1.  Clone the Quota Management Solution repo
 
@@ -370,7 +393,7 @@ Account created in the previous step at the Org A:
     cd ./quota-monitorings-solution/terraform/example
     ```
 
-### 3.6 Set OAuth Token Using Service Account Impersonization
+### 4.6 Set OAuth Token Using Service Account Impersonization
 
 Impersonate your host project service account and set environment variable
 using temporary token to authenticate terraform. You will need to make
@@ -403,7 +426,7 @@ try again.
         --condition=None
     ```
 
-### 3.7 Configure Terraform
+### 4.7 Configure Terraform
 
 1.  Verify that you have these 3 files in your local directory:
     *   main.tf
@@ -426,7 +449,7 @@ try again.
     To deploy the latest unreleased code from a local clone of the QMS
     repository, set `qms_version` to `main`
 
-### 3.8 Run Terraform
+### 4.8 Run Terraform
 
 1.  Run terraform commands
     *   `terraform init`
@@ -446,7 +469,7 @@ try again.
     gcloud config unset auth/impersonate_service_account
     ```
 
-### 3.9 Testing
+### 4.9 Testing
 
 1.  Initiate first job run in Cloud Scheduler.
 
@@ -472,7 +495,7 @@ try again.
     like this:
     ![test-bigquery-table](img/test_bigquery_table.png)
 
-### 3.10 Looker Studio Dashboard setup
+### 4.10 Looker Studio Dashboard setup
 
 1.  Go to the [Looker Studio dashboard template](https://lookerstudio.google.com/reporting/f5e179e9-29e1-46c2-a443-97f5e24edd64).
     A Looker Studio dashboard will look like this:
@@ -490,12 +513,14 @@ try again.
     ![ds_edit_data_source](img/ds_edit_data_source.png)
     It will open the data source details
     ![ds_datasource_config_step_1]img/ds_datasource_config_step_1.png
-6.  Replace the BigQuery Project Id, Dataset Id and Table Name to match your
-    deployment. Verify the query by running in BigQuery Editor to make sure
-    query the correct results and there are no syntax errors:
+6.  Replace the BigQuery Project Id of your bq table, Dataset Id and Table Name to
+    match your deployment. If you assigned app codes add a list of  project ids in
+    where clause  from the csv file upload. Verify the query by running in BigQuery
+    Editor for accuracy & syntax:
 
     ```sql
-    SELECT 
+    #For org level dashboard use the following query
+    SELECT
         project_id,
         added_at,
         region,
@@ -529,6 +554,43 @@ try again.
         quota_metric,
         added_at,
         quota_limit
+    
+    # For app level dashboard use the following query replace PROJECT_ID with project_ids from csv file upload
+    SELECT 
+        project_id,
+        added_at,
+        region,
+        quota_metric,
+        CASE
+            WHEN CAST(quota_limit AS STRING) ='9223372036854775807' THEN 'unlimited'
+        ELSE
+            CAST(quota_limit AS STRING)
+        END AS str_quota_limit,
+        SUM(current_usage) AS current_usage,
+        ROUND((SAFE_DIVIDE(CAST(SUM(current_usage) AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC))*100),2) AS current_consumption,
+        SUM(max_usage) AS max_usage,
+        ROUND((SAFE_DIVIDE(CAST(SUM(max_usage) AS BIGNUMERIC), CAST(quota_limit AS BIGNUMERIC))*100),2) AS max_consumption
+    FROM
+        (
+            SELECT
+                *,
+                RANK() OVER (PARTITION BY project_id, region, quota_metric ORDER BY added_at DESC) AS latest_row
+            FROM
+                `[YOUR_PROJECT_ID].quota_monitoring_dataset.quota_monitoring_table`
+        ) t
+    WHERE
+        latest_row=1
+        AND current_usage IS NOT NULL
+        AND quota_limit IS NOT NULL
+        AND current_usage != 0
+        AND quota_limit != 0
+        AND project-id IN ([PROJECT_ID1], [PROJECT_ID2]..)
+        GROUP BY
+        project_id,
+        region,
+        quota_metric,
+        added_at,
+        quota_limit
     ```
 
 7.  After making sure that query is returning results, replace it in the Data
@@ -543,7 +605,7 @@ try again.
      table etc in the ‘Edit’ mode.
      ![ds-switch-to-view-mode](img/ds-switch-to-view-mode.png)
 
-### 3.11 Scheduled Reporting
+### 4.11 Scheduled Reporting
 
 Quota monitoring reports can be scheduled from the Looker Studio dashboard using
 ‘Schedule email delivery’. The screenshot of the Looker Studio dashboard will be
@@ -551,7 +613,7 @@ delivered as a pdf report to the configured email Ids.
 
 ![ds-schedule-email-button](img/ds-schedule-email-button.png)
 
-### 3.11 Alerting
+### 4.11 Alerting
 
 The alerts about services nearing their quota limits can be configured to be
 sent via email as well as following external services:
@@ -561,12 +623,12 @@ sent via email as well as following external services:
 *   SMS
 *   Custom Webhooks
 
-#### 3.11.1 Slack Configuration
+#### 4.11.1 Slack Configuration
 
 To configure notifications to be sent to a Slack channel, you must have the
 Monitoring Notification Channel Editor role on the host project.
 
-##### 3.11.1.1 Create Notification Channel
+##### 4.11.1.1 Create Notification Channel
 
 1.  In the Cloud Console, use the project picker to select your Google Cloud
     project, and then select Monitoring, or click the link here: Go to Monitoring
@@ -587,7 +649,7 @@ Monitoring Notification Channel Editor role on the host project.
     *   Be sure you invite the Monitoring app to the channel you specified when
         creating the notification channel in Monitoring.
 
-##### 3.11.1.2 Configuring Alerting Policy
+##### 4.11.1.2 Configuring Alerting Policy
 
 1.  In the Alerting section, click on Policies.
 2.  Find the Policy named ‘Resource Reaching Quotas’. This policy was created
@@ -601,7 +663,7 @@ Monitoring Notification Channel Editor role on the host project.
 You should now receive alerts in your Slack channel whenever a quota reaches
 the specified threshold limit.
 
-## 4. Release Note
+## 5. Release Note
 
 ### v4.0.0: Quota Monitoring across GCP services
 
@@ -633,22 +695,22 @@ the specified threshold limit.
 
     *   Re-run the Terraform, to update the Cloud Functions and Scheduled Query
     *   Update the SQL used in the Looker Studio dashboard according to Step #7
-        of [3.10 Looker Studio Dashboard setup](#310-looker-studio-dashboard-setup).
+        of [4.10 Looker Studio Dashboard setup](#410-looker-studio-dashboard-setup).
 
-## 5. What is Next
+## 6. What is Next
 
 1.  Graphs (Quota utilization over a period of time)
 2.  Search project, folder, org, region
 3.  Threshold configurable for each metric
 
-## 6. Getting Support
+## 7. Getting Support
 
 Quota Monitoring Solution is a project based on open source contributions. We'd
 love for you to [report issues, file feature requests][new-issue], and
 [send pull requests][new-pr] (see [Contributing](README.md#7-contributing)). Quota
 Monitoring Solution is not officially covered by the Google Cloud product support.
 
-## 7. Contributing
+## 8. Contributing
 
 *   [Contributing guidelines][contributing-guidelines]
 *   [Code of conduct][code-of-conduct]
